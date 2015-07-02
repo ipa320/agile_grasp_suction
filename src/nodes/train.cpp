@@ -1,8 +1,8 @@
 #include <agile_grasp/learning.h>
 #include <agile_grasp/localization.h>
-
 #include <boost/filesystem.hpp>
-
+#include <boost/lexical_cast.hpp>
+#include <Eigen/Dense>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -33,7 +33,8 @@ int main(int argc, char** argv)
     }
     
     // get list of workspace dimensions if available
-		std::string file_name = pcd_dir + "workspace.txt";    
+		std::string file_name = pcd_dir + "workspace.txt";
+		std::cout << file_name;
     boost::filesystem::path file_test(file_name);
     Eigen::MatrixXd workspace_mat(files.size(), 6);
     if( !boost::filesystem::exists(file_test) )
@@ -106,11 +107,29 @@ int main(int argc, char** argv)
 		std::cout << "Acquiring training data ...\n";
 		std::vector<GraspHypothesis> hand_list;
     std::vector<int> hand_list_sizes(files.size());
+    std::cout <<"loading the following pcd images for training: \n";
 		for (int i = 0; i < files.size(); i++)
 		{
 			std::cout << " Creating training data from file " << files[i] << " ...\n";
-			std::string file_left = files[i] + "l_reg.pcd";
-			std::string file_right = files[i] + "r_reg.pcd";
+			boost::filesystem::path pcd_file_left(files[i]+"l_reg.pcd");
+			boost::filesystem::path pcd_file_right(files[i]+"r_reg.pcd");
+			std::string file_left;
+			std::string file_right;
+			if (boost::filesystem::exists(pcd_file_left) && boost::filesystem::exists(pcd_file_right))
+			{
+				file_left = files[i] + "l_reg.pcd";
+				file_right = files[i] + "r_reg.pcd";
+				std::cout << file_left << "\n";
+				std::cout << file_right << "\n";
+			}
+			else
+			{
+				std:cout << "only the left pdc was found ... \n";
+				file_left = files[i] + ".pcd";
+				file_right = "";
+				std::cout << file_left << "\n";
+			}
+
 			loc.setWorkspace(workspace_mat.row(i));
 			std::vector<GraspHypothesis> hands = loc.localizeHands(file_left, file_right, true, true);
 			hand_list.insert(hand_list.end(), hands.begin(), hands.end());
@@ -126,6 +145,7 @@ int main(int argc, char** argv)
 		cam_pos.col(1) = loc.getCameraTransform(false).block<3,1>(0,3);
     int max_positives = 20;
     // learn.trainBalanced(hand_list, hand_list_sizes, svm_file_name, cam_pos, max_positives);
+//    std::cout <<"HI	";
     learn.train(hand_list, hand_list_sizes, svm_file_name, cam_pos, max_positives);
 		// learn.train(hand_list, svm_file_name, cam_pos, false);
 

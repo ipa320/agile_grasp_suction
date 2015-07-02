@@ -1,4 +1,5 @@
 #include <agile_grasp/localization.h>
+#include <omp.h>
 
 std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& cloud_in, int size_left,
 	const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering)
