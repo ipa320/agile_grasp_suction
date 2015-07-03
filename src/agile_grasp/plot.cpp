@@ -50,15 +50,28 @@ void Plot::plotCloud(const PointCloud::Ptr& cloud)
 }
 
 
-void Plot::plotLocalAxes(const std::vector<Quadric>& quadric_list, const PointCloud::Ptr& cloud)
+void Plot::plotLocalAxes(const std::vector<Quadric>& quadric_list, const PointCloud::Ptr& cloud, bool plot_bn, bool plot_cloud)
 {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Local Axes");
 	viewer->addPointCloud<pcl::PointXYZ>(cloud, "registered point cloud");
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
 		"registered point cloud");
-
 	for (int i = 0; i < quadric_list.size(); i++)
-		quadric_list[i].plotAxes((void*) &viewer, i);
+		quadric_list[i].plotAxes((void*) &viewer, i, plot_bn);
+	if (plot_cloud) // in lining the plotting of the PC inside this function
+	{
+		PointCloud::Ptr samples_cloud(new PointCloud);
+		for (int i = 0; i < cloud->size(); i++)
+			samples_cloud->points.push_back(cloud->points[i]);
+
+		viewer->addPointCloud<pcl::PointXYZ>(samples_cloud, "samples cloud");
+		viewer->setPointCloudRenderingProperties(
+				pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2,
+				"samples cloud");
+		viewer->setPointCloudRenderingProperties(
+				pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0.5, 0.0,
+				"samples cloud");
+	}
 
 	runViewer(viewer);
 }

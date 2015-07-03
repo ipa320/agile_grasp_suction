@@ -48,6 +48,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 	// plot camera source for each point in the cloud
 	if (plots_camera_sources_)
 		plot_.plotCameraSource(pts_cam_source, cloud);
+	// visualization
 	bool print_pcl_before_and_after_filtering = false;
 	if(print_pcl_before_and_after_filtering)
 	{
@@ -55,24 +56,6 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 		plot_.plotCloud(cloud_in);
 		std::cout << "cloud size after filtering:";
 		plot_.plotCloud(cloud);
-//		std::vector<int> indexx(cloud_in->size());
-//
-//		std::cout << "cloud size before filtering:";
-//		for (int i = 0;i<indexx.size();i++)
-//		{
-//			indexx[i] = i;
-//		}
-//		plot_.plotSamples(indexx,cloud_in);
-//
-//		indexx.resize(cloud->size());
-//		//indexx.clear();
-//		//std::vector<int> indexx(cloud->size());
-//		std::cout << "cloud size after filtering:";
-////		for (int i = 0;i<indexx.size();i++)
-////		{
-////			indexx[i] = i;
-////		}
-//		plot_.plotSamples(indexx,cloud);
 	}
 
 	if (uses_clustering)
@@ -95,7 +78,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 		seg.segment(*inliers, *coefficients);
 		if (inliers->indices.size() == 0)
 		{
-			std::cout << " Could not estimate a planar model for the given dataset." << std::endl;
+			std::cout << " Could not estimate a planar model for the given dataset.\n check localization.cpp" << std::endl;
 			hand_list.resize(0);
 			return hand_list;
 		}
@@ -107,7 +90,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 		pcl::ExtractIndices<pcl::PointXYZ> extract;
 		extract.setInputCloud(cloud);
 		extract.setIndices(inliers);
-		extract.setNegative(true);
+		extract.setNegative(true);// this extracts all the points that are not in the inliners set
 		std::vector<int> indices_cluster;
 		extract.filter(indices_cluster);
 		PointCloud::Ptr cloud_cluster(new PointCloud);
@@ -118,6 +101,17 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 			cloud_cluster->points[i] = cloud->points[indices_cluster[i]];
 			cluster_cam_source[i] = pts_cam_source[indices_cluster[i]];
 		}
+		// visualization
+		bool print_pcl_before_and_after_plane_extraction = false;
+		if(print_pcl_before_and_after_plane_extraction)
+			{
+				std::cout << "cloud size before plane removal:";
+				plot_.plotCloud(cloud);
+				std::cout << "cloud size after plane removal:";
+				plot_.plotCloud(cloud_cluster);
+			}
+
+		// overwrite old cloud with the cloud without the plane
 		cloud = cloud_cluster;
 		*cloud_plot = *cloud;
 		std::cout << " PointCloud representing the non-planar component: " << cloud->points.size()
@@ -126,6 +120,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 
 	// draw down-sampled and workspace reduced cloud
 	cloud_plot = cloud;
+
   
   // set plotting within handle search on/off  
   bool plots_hands;

@@ -17,15 +17,16 @@ std::vector<GraspHypothesis> HandSearch::findHands(const PointCloud::Ptr cloud,
 	if (calculates_antipodal)
 	{
 		std::cout << "Calculating normals for all points\n";
+		double nn_radius_taubin_Original = nn_radius_taubin_;//0.03
 		nn_radius_taubin_ = 0.01;
 		std::vector<int> indices_cloud(cloud->size());
 		for (int i = 0; i < indices_cloud.size(); i++)
 			indices_cloud[i] = i;
 		findQuadrics(cloud, pts_cam_source, kdtree, indices_cloud);
-		nn_radius_taubin_ = 0.03;
+		nn_radius_taubin_ = nn_radius_taubin_Original;//0.03
 	}
 
-	// draw samples from the point cloud uniformly
+	// draw samples from the point cloud uniformly, if no indices are given
 	std::vector<int> indices_rand;
 	Eigen::VectorXi hands_cam_source;
 	if (indices.size() == 0)
@@ -50,7 +51,7 @@ std::vector<GraspHypothesis> HandSearch::findHands(const PointCloud::Ptr cloud,
 
 	// find quadrics
 	std::cout << "Estimating local axes ...\n";
-	std::vector<Quadric> quadric_list = findQuadrics(cloud, pts_cam_source, kdtree, indices_rand);
+	std::vector<Quadric> quadric_list = findQuadrics(cloud, pts_cam_source, kdtree, indices_rand);// fit quadratics to the selected points
 	if (plots_local_axes_)
 		plot_.plotLocalAxes(quadric_list, cloud_plot);
 
@@ -84,6 +85,7 @@ std::vector<Quadric> HandSearch::findQuadrics(const PointCloud::Ptr cloud,
 
 		if (kdtree.radiusSearch(sample, nn_radius_taubin_, nn_indices, nn_dists) > 0)
 		{
+			// find neighbors and extract thier camera sources
 			Eigen::VectorXi nn_cam_source(nn_indices.size());
 //      std::cout << " Found " << nn_indices.size() << " neighbors.\n";
 

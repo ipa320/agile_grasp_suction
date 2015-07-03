@@ -104,8 +104,9 @@ public:
 	 * \brief Plot the local axes.
 	 * \param viewer_void a pointer to a PCL visualizer
 	 * \param id an identifier number for the axes
+	 * \param plot_bn plot the binormal or not
 	*/
-	void plotAxes(void* viewer_void, int id) const;
+	void plotAxes(void* viewer_void, int id, bool plot_bn = false) const;
 	
 	/**
 	 * \brief Return the sample for which the point neighborhood was found.

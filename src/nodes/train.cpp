@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 			}
 
 			loc.setWorkspace(workspace_mat.row(i));
-			std::vector<GraspHypothesis> hands = loc.localizeHands(file_left, file_right, true, true);
+			std::vector<GraspHypothesis> hands = loc.localizeHands(file_left, file_right, true, true);// bool calculates_antipodal, bool uses_clustering
 			hand_list.insert(hand_list.end(), hands.begin(), hands.end());
       hand_list_sizes[i] = hand_list.size();
       std::cout << i << ") # hands: " << hands.size() << std::endl;

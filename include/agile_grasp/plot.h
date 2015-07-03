@@ -96,8 +96,10 @@ class Plot
 		 * \brief Plot a set of quadrics by plotting their local axes.
 		 * \param quadric_list the list of quadrics to be plotted
 		 * \param cloud the point cloud to be plotted
+		 * \param plot_bn plot the binormal or not
+		 * \param plot_cloud plot the PC or not
 		*/
-		void plotLocalAxes(const std::vector<Quadric>& quadric_list, const PointCloud::Ptr& cloud);
+		void plotLocalAxes(const std::vector<Quadric>& quadric_list, const PointCloud::Ptr& cloud, bool plot_bn = false, bool plot_cloud = true);
 		
 		/** 
 		 * \brief Plot the camera source for each point in the point cloud.

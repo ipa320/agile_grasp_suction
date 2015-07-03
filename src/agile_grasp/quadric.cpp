@@ -362,12 +362,12 @@ bool Quadric::solveGeneralizedEigenProblem(const Eigen::MatrixXd& A, const Eigen
 	return INFO == 0;
 }
 
-void Quadric::plotAxes(void* viewer_void, int id) const
+void Quadric::plotAxes(void* viewer_void, int id, bool plot_bn) const
 {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<
 			pcl::visualization::PCLVisualizer> *>(viewer_void);
 
-	pcl::PointXYZ p, q, r;
+	pcl::PointXYZ p, q, r, bn;
 	p.x = sample_(0);
 	p.y = sample_(1);
 	p.z = sample_(2);
@@ -377,9 +377,15 @@ void Quadric::plotAxes(void* viewer_void, int id) const
 	r.x = p.x + 0.02 * normal_(0);
 	r.y = p.y + 0.02 * normal_(1);
 	r.z = p.z + 0.02 * normal_(2);
+
+	bn.x = p.x + 0.02 * binormal_(0);
+	bn.y = p.y + 0.02 * binormal_(1);
+	bn.z = p.z + 0.02 * binormal_(2);
 //  std::cout << "p: " << p << std::endl;
 //  std::cout << "q: " << q << std::endl;
 //  std::cout << "r: " << r << std::endl;
 	viewer->addLine<pcl::PointXYZ>(p, q, 0, 0, 255, "curvature_axis_" + boost::lexical_cast<std::string>(id));
 	viewer->addLine<pcl::PointXYZ>(p, r, 255, 0, 0, "normal_axis_" + boost::lexical_cast<std::string>(id));
+	if (plot_bn)
+		viewer->addLine<pcl::PointXYZ>(p, bn, 0, 255, 0, "binormal_axis_" + boost::lexical_cast<std::string>(id));
 }
