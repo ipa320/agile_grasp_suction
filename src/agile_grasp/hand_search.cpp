@@ -153,18 +153,18 @@ std::vector<GraspHypothesis> HandSearch::findHands(const PointCloud::Ptr cloud,
 			nn_cam_source.setZero(nn_indices.size());
 			centered_neighborhood.setZero(3, nn_indices.size());
 
-			for (int j = 0; j < nn_indices.size(); j++)
+			for (int j = 0; j < nn_indices.size(); j++)// extract camera sources and normals of the neighbors
 			{
 				nn_cam_source(j) = pts_cam_source(nn_indices[j]);
 				centered_neighborhood.col(j) = (cloud->points[nn_indices[j]].getVector3fMap()
 						- sample.getVector3fMap()).cast<double>();
-				nn_normals.col(j) = cloud_normals_.col(nn_indices[j]);
+				nn_normals.col(j) = cloud_normals_.col(nn_indices[j]);// only non zero if all points were calculated before using the calculates_antipodal flag
 			}
 
 			FingerHand finger_hand(finger_width_, hand_outer_diameter_, hand_depth_);
 
 			Eigen::Vector3d sample_eig = sample.getVector3fMap().cast<double>();
-			RotatingHand rotating_hand(cam_tf_left_.block<3, 1>(0, 3) - sample_eig,
+			RotatingHand rotating_hand(cam_tf_left_.block<3, 1>(0, 3) - sample_eig,// vector from sample point to cameras
 				cam_tf_right_.block<3, 1>(0, 3) - sample_eig, finger_hand, tolerant_antipodal_, hands_cam_source(i));
 			const Quadric& q = quadric_list[i];
 			double time_tf1 = omp_get_wtime();

@@ -141,7 +141,7 @@ private:
 	Eigen::Matrix3Xd normals_; ///< the normals for each point in the point neighborhood
 	Eigen::VectorXi points_cam_source_;	 ///<	the camera source for each point in the point neighborhood
   FingerHand finger_hand_; ///< the finger hand object
-  
+
   /** parameters */
   bool tolerant_antipodal_; ///< whether the antipodal testing uses "tolerant" thresholds
 };
