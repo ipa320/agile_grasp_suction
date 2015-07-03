@@ -28,10 +28,10 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 	pcl::removeNaNFromPointCloud(*cloud_in, *cloud_in, nan_indices);
 
 	// reduce point cloud to workspace
-	std::cout << "Filtering workspace ...\n";
+	std::cout << "Filtering workspace ...\n cloud size before filtering: "<< cloud_in->size()<<"\n";
 	PointCloud::Ptr cloud(new PointCloud);
 	filterWorkspace(cloud_in, pts_cam_source, cloud, pts_cam_source);
-	std::cout << " " << cloud->size() << " points left\n";
+	std::cout << "cloud size after filtering:" << cloud->size() << " points left\n";
 
 	// store complete cloud for later plotting
 	PointCloud::Ptr cloud_plot(new PointCloud);
@@ -48,6 +48,32 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 	// plot camera source for each point in the cloud
 	if (plots_camera_sources_)
 		plot_.plotCameraSource(pts_cam_source, cloud);
+	bool print_pcl_before_and_after_filtering = false;
+	if(print_pcl_before_and_after_filtering)
+	{
+		std::cout << "cloud size before filtering:";
+		plot_.plotCloud(cloud_in);
+		std::cout << "cloud size after filtering:";
+		plot_.plotCloud(cloud);
+//		std::vector<int> indexx(cloud_in->size());
+//
+//		std::cout << "cloud size before filtering:";
+//		for (int i = 0;i<indexx.size();i++)
+//		{
+//			indexx[i] = i;
+//		}
+//		plot_.plotSamples(indexx,cloud_in);
+//
+//		indexx.resize(cloud->size());
+//		//indexx.clear();
+//		//std::vector<int> indexx(cloud->size());
+//		std::cout << "cloud size after filtering:";
+////		for (int i = 0;i<indexx.size();i++)
+////		{
+////			indexx[i] = i;
+////		}
+//		plot_.plotSamples(indexx,cloud);
+	}
 
 	if (uses_clustering)
 	{

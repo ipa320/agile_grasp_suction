@@ -39,6 +39,16 @@ void Plot::plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr
 	runViewer(viewer);
 }
 
+void Plot::plotCloud(const PointCloud::Ptr& cloud)
+{
+	std::vector<int> indexx(cloud->size());
+	for (int i = 0;i<indexx.size();i++)
+			{
+				indexx[i] = i;
+			}
+	plotSamples(indexx,cloud);
+}
+
 
 void Plot::plotLocalAxes(const std::vector<Quadric>& quadric_list, const PointCloud::Ptr& cloud)
 {

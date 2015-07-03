@@ -105,7 +105,7 @@ public:
 			const std::string& svm_filename);
 	
 	/**
-	 * \brief Localize hands in a given point cloud.
+	 * \brief Localize hands in a given point cloud. this is the main localizeHands function
 	 * \param cloud_in the input point cloud
 	 * \param indices the set of point cloud indices for which point neighborhoods are found
 	 * \param calculates_antipodal whether the grasp hypotheses are checked for being antipodal

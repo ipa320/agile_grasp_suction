@@ -85,6 +85,13 @@ class Plot
 		*/
 		void plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr& cloud);
 		
+		/**
+		 * \brief plots a point cloud
+		 * \param cloud the point cloud to be plotted
+		 */
+
+		void plotCloud(const PointCloud::Ptr& cloud);
+
 		/** 
 		 * \brief Plot a set of quadrics by plotting their local axes.
 		 * \param quadric_list the list of quadrics to be plotted
