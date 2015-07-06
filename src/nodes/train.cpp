@@ -95,7 +95,7 @@ int main(int argc, char** argv)
 		Localization loc(num_threads, false, plots_hands);
 		loc.setCameraTransforms(base_tf * sqrt_tf.inverse(), base_tf * sqrt_tf);
 		loc.setNumSamples(num_samples);
-		loc.setNeighborhoodRadiusTaubin(0.03);
+		loc.setNeighborhoodRadiusTaubin(0.08);
 		loc.setNeighborhoodRadiusHands(0.08);
 		loc.setFingerWidth(0.01);
 		loc.setHandOuterDiameter(0.09);

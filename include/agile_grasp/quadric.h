@@ -143,6 +143,12 @@ public:
 	{
 		return normal_;
 	}
+	double getCurvature() const {
+		return curvature_;
+	}
+	double getNormalRatio() const {
+		return normals_ratio_;
+	}
 
 
 private:
@@ -181,6 +187,7 @@ private:
   Eigen::Vector3d centroid_; ///< the centroid of the quadric
   Eigen::Matrix3d covariance_matrix_; ///< the covariance matrix of the quadric
   double normals_ratio_; ///< the ratio between the normals of the quadric
+  double curvature_; //the curvature of the quadratic
   
   static const int TAUBIN_MATRICES_SIZE = 10; ///< size of matrices in Taubin Quadric Fitting
 };

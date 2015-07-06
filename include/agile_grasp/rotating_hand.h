@@ -41,6 +41,7 @@
 #include <agile_grasp/antipodal.h>
 #include <agile_grasp/finger_hand.h>
 #include <agile_grasp/grasp_hypothesis.h>
+#include <agile_grasp/plot.h>
 
 /** RotatingHand class
  *
@@ -77,9 +78,10 @@ public:
 	 * \param finger_hand the FingerHand object to be used
 	 * \param tolerant_antipodal whether the antipodal quality estimation uses "tolerant" thresholds
 	 * \param the camera source of the sample for which the point neighborhood was found
+	 * \param num_orientations the number of orientations we want to try per point for a grasp
 	 */
 	RotatingHand(const Eigen::VectorXd& camera_origin_left, const Eigen::VectorXd& camera_origin_right,
-			const FingerHand& finger_hand, bool tolerant_antipodal, int cam_source);
+			const FingerHand& finger_hand, bool tolerant_antipodal, int cam_source,int num_orientations = 8);
 
 	/**
 	 * \brief Transforms a set of points into the hand frame, defined by normal and axis.
@@ -92,7 +94,7 @@ public:
 	 */
 	void transformPoints(const Eigen::Matrix3Xd& points, const Eigen::Vector3d& normal,
 			const Eigen::Vector3d& axis, const Eigen::Matrix3Xd& normals, const Eigen::VectorXi& points_cam_source,
-			double hand_height);
+			double hand_height, bool crop_points_accordingto_Hight = true);
 	
 	/**
 	 * \brief Evaluate which hand orientations and which finger placements lead to a valid grasp.

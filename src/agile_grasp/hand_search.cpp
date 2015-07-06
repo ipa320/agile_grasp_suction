@@ -134,9 +134,9 @@ std::vector<GraspHypothesis> HandSearch::findHands(const PointCloud::Ptr cloud,
 
 	std::vector< std::vector<GraspHypothesis> > grasp_lists(quadric_list.size(), std::vector<GraspHypothesis>(0));
 
-#ifdef _OPENMP // parallelization using OpenMP
-#pragma omp parallel for private(nn_indices, nn_dists, nn_normals, nn_cam_source, centered_neighborhood) num_threads(num_threads_)
-#endif
+//#ifdef _OPENMP // parallelization using OpenMP // remmember to uncomment
+//#pragma omp parallel for private(nn_indices, nn_dists, nn_normals, nn_cam_source, centered_neighborhood) num_threads(num_threads_)
+//#endif
 	for (std::size_t i = 0; i < quadric_list.size(); i++)
 	{
 		double timei = omp_get_wtime();
@@ -178,12 +178,16 @@ std::vector<GraspHypothesis> HandSearch::findHands(const PointCloud::Ptr cloud,
 			if (grasps.size() > 0)
 			{
 				// grasp_list.insert(grasp_list.end(), grasps.begin(), grasps.end());
+				//plot_.plotHands(grasps, cloud, "Hypothesis");
         grasp_lists[i] = grasps;
 			}
 		}
 
 		time_iter += omp_get_wtime() - timei;
+
 	}
+
+
 	time_eval_hand /= quadric_list.size();
 	time_nn /= quadric_list.size();
 	time_iter /= quadric_list.size();

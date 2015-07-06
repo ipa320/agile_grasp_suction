@@ -17,6 +17,23 @@ FingerHand::FingerHand(double finger_width, double hand_outer_diameter,
 //  std::cout << "finger spacing: " << finger_spacing_.transpose() << std::endl;
 }
 
+void FingerHand::evaluateSuction()
+{
+	fingers_.setConstant(false);
+	for (int i = 0; i < points_.cols(); i++) {
+		if (points_(1, i) < back_of_hand_) {
+//			std::cout
+//					<< "Collision with the back of the hand, discarding orientation... \n";
+			return;
+		}
+		int m = finger_spacing_.size(); // does not exist now but to avoid breaking the code atm
+		for (int i = 0; i < m; i++){
+			fingers_(i) = true;
+		}
+	}
+}
+
+
 void FingerHand::evaluateFingers(double bite)
 {
 	back_of_hand_ = -1.0 * (hand_depth_ - bite);
@@ -28,7 +45,7 @@ void FingerHand::evaluateFingers(double bite)
 	std::vector<int> cropped_indices;
 	for (int i = 0; i < points_.cols(); i++)
 	{
-		if (points_(1, i) < bite)
+		if (points_(1, i) < bite)// this is the maximum bite the gripper would try to grasp (relook at this)
 		{
 			cropped_indices.push_back(i);
 
@@ -36,6 +53,7 @@ void FingerHand::evaluateFingers(double bite)
 			// to collide with points.
 			if (points_(1, i) < back_of_hand_)
 			{
+				//std::cout<< "Collision with the back of the hand, discarding orientation... \n";
 				return;
 			}
 		}

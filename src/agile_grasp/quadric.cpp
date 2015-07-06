@@ -260,6 +260,8 @@ void Quadric::print()
 	std::cout << "binormal: " << binormal_.transpose() << std::endl;
 }
 
+
+
 void Quadric::findAverageNormalAxis(const Eigen::MatrixXd &normals)
 {
 	// calculate curvature axis
@@ -272,9 +274,10 @@ void Quadric::findAverageNormalAxis(const Eigen::MatrixXd &normals)
 	//~ std::cout<<"eigen_vectors:\n"<<eigen_vectors<<std::endl;
 	Eigen::Vector3d sorted_eigen_values = eigen_values;
 	std::sort(sorted_eigen_values.data(), sorted_eigen_values.data() + sorted_eigen_values.size());
-	//~ std::cout<<"eigen_values:\n"<<eigen_values<<std::endl;
-	//~ std::cout<<"sorted eigen_values:\n"<<sorted_eigen_values<<std::endl;
+	//std::cout<<"eigen_values:\n"<<eigen_values<<std::endl;
+	//std::cout<<"sorted eigen_values:\n"<<sorted_eigen_values<<std::endl;
 	normals_ratio_ = sorted_eigen_values(1) / sorted_eigen_values(2);
+	curvature_ = sorted_eigen_values(0) / (sorted_eigen_values(0)+sorted_eigen_values(1)+sorted_eigen_values(2));
 	int min_index;
 	eigen_values.minCoeff(&min_index);
 	curvature_axis_ = eigen_vectors.col(min_index);

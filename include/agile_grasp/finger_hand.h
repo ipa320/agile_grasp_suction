@@ -69,6 +69,10 @@ public:
    * \param bite the minimum object height
   */
   void evaluateFingers(double bite);
+  /**
+   * \brief Find collision free suction placements
+   */
+  void evaluateSuction();
 	
 	/**
    * \brief Find robot hand configurations that fit the cloud.
