@@ -54,7 +54,8 @@
 #include <pcl/segmentation/region_growing.h>
 // PCL used for circle detection
 #include <pcl/sample_consensus/ransac.h>
-#include <pcl/sample_consensus/sac_model_circle.h>
+//#include <pcl/sample_consensus/sac_model_circle.h>
+#include <pcl/sample_consensus/sac_model_circle3d.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
