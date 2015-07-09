@@ -263,6 +263,18 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 			 pcl::ModelCoefficients circle_to_cylinder;
 			 for (int i; i < circle_inliners_of_all_clusters.size(); i++) {
 				 if (circle_inliners_of_all_clusters[i].indices.size()!= 0){
+
+					 Eigen::Vector3d cylinder_vector(
+						circle_coefficients_of_all_clusters[i].values[4],
+						circle_coefficients_of_all_clusters[i].values[5],
+						circle_coefficients_of_all_clusters[i].values[6]);
+					 Eigen::Vector3d Zaxis(0,0,1);// assuming a positive z axis from the camera to the scene
+					 double dotproduct = Zaxis.dot(cylinder_vector);// it is the cos of the angel since both vectors are normalized there is no need to divide
+					 if(dotproduct>0){// the vectors are between |-90 and 90 degrees| from each other then we revers the direction
+						 circle_coefficients_of_all_clusters[i].values[4] = -circle_coefficients_of_all_clusters[i].values[4];
+						 circle_coefficients_of_all_clusters[i].values[5] = -circle_coefficients_of_all_clusters[i].values[5];
+						 circle_coefficients_of_all_clusters[i].values[6] = -circle_coefficients_of_all_clusters[i].values[6];
+					 }
 					 std::cout<< "The parameters of cylinder "<<i<<" are \n";
 					 std::cout<< "x: "<<circle_coefficients_of_all_clusters[i].values[0]<<"\n";
 					 std::cout<< "y: "<<circle_coefficients_of_all_clusters[i].values[1]<<"\n";
