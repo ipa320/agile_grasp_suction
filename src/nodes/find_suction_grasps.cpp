@@ -111,7 +111,7 @@ int main(int argc, char** argv)
   std::string svm_file_name = "";
   GraspLocalizer loc(node, cloud_topic, cloud_frame, cloud_type, svm_file_name, params);// there are 2 constructors depending of whcih type of struct params has
 //  loc.localizeGrasps();
-  loc.localizeSuctionGrasps();
+  loc.findSuctionGrasps();
 
 	return 0;
 }

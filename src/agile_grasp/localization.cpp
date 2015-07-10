@@ -1,8 +1,360 @@
 #include <agile_grasp/localization.h>
 #include <omp.h>
 
-std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& cloud_in, int size_left,
+std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointCloud::Ptr& cloud_in, int size_left,
 	const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering)
+{
+	std::vector<GraspHypothesis> hand_list;
+	double t0 = omp_get_wtime();
+
+	if (size_left == 0 || cloud_in->size() == 0)
+	{
+		std::cout << "Input cloud is empty!\n";
+		std::cout << size_left << std::endl;
+		hand_list.resize(0);
+		return hand_list;
+	}
+
+	// set camera source for all points (0 = left, 1 = right)
+	std::cout << "Generating camera sources for " << cloud_in->size() << " points ...\n";
+	Eigen::VectorXi pts_cam_source(cloud_in->size());
+	if (size_left == cloud_in->size())
+		pts_cam_source << Eigen::VectorXi::Zero(size_left);
+	else
+		pts_cam_source << Eigen::VectorXi::Zero(size_left), Eigen::VectorXi::Ones(cloud_in->size() - size_left);
+
+	// remove NAN points from the cloud
+	std::vector<int> nan_indices;
+	pcl::removeNaNFromPointCloud(*cloud_in, *cloud_in, nan_indices);
+
+	// reduce point cloud to workspace
+	std::cout << "Filtering workspace ...\n cloud size before filtering: "<< cloud_in->size()<<"\n";
+	PointCloud::Ptr cloud(new PointCloud);
+	filterWorkspace(cloud_in, pts_cam_source, cloud, pts_cam_source);
+	std::cout << "cloud size after filtering:" << cloud->size() << " points left\n";
+
+	// store complete cloud for later plotting
+	PointCloud::Ptr cloud_plot(new PointCloud);
+	*cloud_plot = *cloud;
+	*cloud_ = *cloud;
+
+	// voxelize point cloud
+	std::cout << "Voxelizing point cloud\n";
+	double t1_voxels = omp_get_wtime();
+	voxelizeCloud(cloud, pts_cam_source, cloud, pts_cam_source, 0.003);
+	double t2_voxels = omp_get_wtime() - t1_voxels;
+	std::cout << " Created " << cloud->points.size() << " voxels in " << t2_voxels << " sec\n";
+
+	// plot camera source for each point in the cloud
+	if (plots_camera_sources_)
+		plot_.plotCameraSource(pts_cam_source, cloud);
+	// visualization
+	bool print_pcl_before_and_after_filtering = false;
+	if(print_pcl_before_and_after_filtering)
+	{
+		std::cout << "cloud size before filtering:";
+		plot_.plotCloud(cloud_in);
+		std::cout << "cloud size after filtering:";
+		plot_.plotCloud(cloud);
+	}
+
+
+	if (uses_clustering)
+	{
+    std::cout << "Finding point cloud clusters ... \n";
+
+		// Create the segmentation object for the planar model and set all the parameters
+		pcl::SACSegmentation<pcl::PointXYZ> seg;
+		pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+		pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>());
+		seg.setOptimizeCoefficients(true);
+		seg.setModelType(pcl::SACMODEL_PLANE);
+		seg.setMethodType(pcl::SAC_RANSAC);
+		seg.setMaxIterations(100);
+		seg.setDistanceThreshold(0.01);
+
+		// Segment the largest planar component from the remaining cloud
+		seg.setInputCloud(cloud);
+		seg.segment(*inliers, *coefficients);
+		if (inliers->indices.size() == 0)
+		{
+			std::cout << " Could not estimate a planar model for the given dataset.\n check localization.cpp" << std::endl;
+			hand_list.resize(0);
+			return hand_list;
+		}
+
+    std::cout << " PointCloud representing the planar component: " << inliers->indices.size()
+      << " data points." << std::endl;
+
+		// Extract the nonplanar inliers
+		pcl::ExtractIndices<pcl::PointXYZ> extract;
+		extract.setInputCloud(cloud);
+		extract.setIndices(inliers);
+		extract.setNegative(true);// this extracts all the points that are not in the inliners set
+		std::vector<int> indices_cluster;
+		extract.filter(indices_cluster);
+		PointCloud::Ptr cloud_cluster(new PointCloud);
+		cloud_cluster->points.resize(indices_cluster.size());
+		Eigen::VectorXi cluster_cam_source(indices_cluster.size());
+		for (int i = 0; i < indices_cluster.size(); i++)
+		{
+			cloud_cluster->points[i] = cloud->points[indices_cluster[i]];
+			cluster_cam_source[i] = pts_cam_source[indices_cluster[i]];
+		}
+		// visualization
+		bool print_pcl_before_and_after_plane_extraction = false;
+		if(print_pcl_before_and_after_plane_extraction)
+			{
+				std::cout << "cloud size before plane removal:";
+				plot_.plotCloud(cloud);
+				std::cout << "cloud size after plane removal:";
+				plot_.plotCloud(cloud_cluster);
+			}
+
+		// overwrite old cloud with the cloud without the plane
+		cloud = cloud_cluster;
+		*cloud_plot = *cloud;
+		std::cout << " PointCloud representing the non-planar component: " << cloud->points.size()
+      << " data points." << std::endl;
+	}
+	bool use_region_growing = true;
+		if (use_region_growing)
+		{
+			double t_seg_start = omp_get_wtime();
+
+			pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;// create normal estimator
+			pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ()); // create KD tree
+			pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>); // output data set for normals
+			std::vector <pcl::PointIndices> clusters; // create the output data set for clusters
+
+			// parameters for segmentation
+			double normal_radius_search = normal_radius_search_;
+			int num_of_kdTree_neighbours = num_of_kdTree_neighbors_;
+			double angle_threshold_between_normals = angle_threshold_between_normals_;// in degrees
+			double curvature_threshold = curvature_threshold_;
+			int minimum_size_of_cluster_allowed = minimum_size_of_cluster_allowed_;
+			// extraction of normals for the entier cloud
+			normal_estimator.setInputCloud (cloud);
+			normal_estimator.setSearchMethod (tree);
+			normal_estimator.setRadiusSearch (normal_radius_search);
+			normal_estimator.compute (*cloud_normals);
+
+			pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg; // create the RegionGrowing object
+			reg.setMinClusterSize (minimum_size_of_cluster_allowed);
+			//reg.setMaxClusterSize (1000000);
+			reg.setSearchMethod (tree);
+			reg.setNumberOfNeighbours (num_of_kdTree_neighbours); // number of neighbors to sample from the KD tree
+			reg.setInputCloud (cloud);
+			reg.setInputNormals (cloud_normals);
+			reg.setSmoothnessThreshold (angle_threshold_between_normals / 180.0 * M_PI); // the angle between normals threshold
+			reg.setCurvatureThreshold (curvature_threshold);// the curvature threshold
+			reg.extract (clusters);
+
+
+
+			//circle extraction
+//			PointCloud::Ptr cluster_cloud(new PointCloud);
+			PointCloud::Ptr cluster_cloud_complete(new PointCloud);// the segmented cloud after removing the points determined to not fall in a region
+			PointCloud::Ptr cluster_cloud_circle(new PointCloud);// contains the cloud where all detected circles are projected
+			pcl::PointCloud<pcl::Normal>::Ptr cluster_normals (new pcl::PointCloud<pcl::Normal>); // output data set for normals
+			pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> seg_cluster; // segmentor
+			pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud for each cluster
+			pcl::ExtractIndices<pcl::Normal> extract_sub_normals;// used to extract the normals for each cluster
+			pcl::ModelCoefficients::Ptr coefficients_circle (new pcl::ModelCoefficients); // the coefficients of the circle detected
+			pcl::PointIndices::Ptr inlineers_circle (new pcl::PointIndices);// the inliners of the point indices
+			std::vector<pcl::PointIndices> circle_inliners_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
+			circle_inliners_of_all_clusters.resize(clusters.size());
+			std::vector<pcl::ModelCoefficients> circle_coefficients_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
+			circle_coefficients_of_all_clusters.resize(clusters.size());
+			double min_detected_radius = min_detected_radius_;
+			double max_detected_radius = max_detected_radius_;
+			double angle_tollerance = angle_tollerance_; // [degrees] the tollerance for the circle detection from the given axis
+			double normal_distance_weight = normal_distance_weight_;
+			int max_number_of_iterations_circle_detection = max_number_of_iterations_circle_detection_;
+			double segmentation_distance_threshold = segmentation_distance_threshold_;
+			//const boost::shared_ptr aPtr(clusters);
+
+			for (int i; i < clusters.size(); i++) {
+				pcl::PointIndices::Ptr aPtr(new pcl::PointIndices(clusters[i]));
+				// extraction of a sub-cloud i.e. one region from the regions
+//				extract_sub_cloud.setIndices(aPtr);
+//				extract_sub_cloud.setInputCloud(cloud);
+//				extract_sub_cloud.setNegative(false);
+//				extract_sub_cloud.filter(*cluster_cloud);
+				//std::cout<< "\n the number of points in the current cluster is : "<< aPtr->indices.size();
+				//plot_.plotCloud(cluster_cloud);
+
+				// extraction of the normals of a sub-cloud i.e. one region from the regions
+				extract_sub_normals.setInputCloud(cloud_normals);
+				extract_sub_normals.setIndices(aPtr);
+				extract_sub_normals.setNegative(false);
+				extract_sub_normals.filter (*cluster_normals);
+
+				// segmentation object for circle segmentation and set all the parameters
+				seg_cluster.setOptimizeCoefficients (true);
+				//seg_cluster.setModelType (pcl::SACMODEL_CIRCLE2D);
+				seg_cluster.setModelType (pcl::SACMODEL_CIRCLE3D);
+				seg_cluster.setMethodType (pcl::SAC_RANSAC);
+				seg_cluster.setNormalDistanceWeight (normal_distance_weight);
+				seg_cluster.setMaxIterations (max_number_of_iterations_circle_detection);
+				seg_cluster.setDistanceThreshold (segmentation_distance_threshold);// distance from model to be considerd an inliner
+				seg_cluster.setRadiusLimits (min_detected_radius, max_detected_radius);
+				Eigen::Vector3f Axis = cluster_normals->points[0].getNormalVector3fMap();
+				seg_cluster.setAxis(Axis);
+				seg_cluster.setEpsAngle(angle_tollerance/180*M_PI);
+				//seg_cluster.setInputCloud (cluster_cloud);
+				//seg_cluster.setInputNormals (cluster_normals);
+				seg_cluster.setInputCloud (cloud);
+				seg_cluster.setInputNormals (cloud_normals);
+				seg_cluster.setIndices(aPtr);
+				seg_cluster.segment (*inlineers_circle, *coefficients_circle);
+				circle_inliners_of_all_clusters[i] = *inlineers_circle; // append the inliner indecies of the detected circle
+				circle_coefficients_of_all_clusters[i] = *coefficients_circle;
+				//std::cout<< "\n The circle has the following coefficients: \n" <<coefficients_circle->values;
+
+			}
+
+			 //std::vector<int> indices_filtered;
+			 //int j = 0;
+			 pcl::PointIndices concatinated_circle_inliners;
+			 pcl::PointIndices concatinated_clusters;
+			 int number_of_clusters_without_circle =0;
+		for (int i; i < circle_inliners_of_all_clusters.size(); i++) {
+			// concatinate all the indecies
+			if (circle_inliners_of_all_clusters[i].indices.size()!= 0){
+			concatinated_circle_inliners.indices.insert(
+					concatinated_circle_inliners.indices.end(),
+					circle_inliners_of_all_clusters[i].indices.begin(),
+					circle_inliners_of_all_clusters[i].indices.end());
+			// concatinate all the indecies of the clusters
+			concatinated_clusters.indices.insert(
+					concatinated_clusters.indices.end(),
+					clusters[i].indices.begin(), clusters[i].indices.end());
+			}
+			else
+				number_of_clusters_without_circle++;
+
+		}
+		// extract the points corresponding to the indices
+		pcl::PointIndices::Ptr concatinated_circle_inliners_pointer (new pcl::PointIndices(concatinated_circle_inliners));
+			 extract_sub_cloud.setInputCloud(cloud);
+			 extract_sub_cloud.setIndices(concatinated_circle_inliners_pointer);
+			 extract_sub_cloud.setNegative(false);
+			 extract_sub_cloud.filter(*cluster_cloud_circle);
+		// extract the points corresponding to the indices
+		pcl::PointIndices::Ptr concatinated_clusters_pointer (new pcl::PointIndices(concatinated_clusters));
+			 extract_sub_cloud.setIndices(concatinated_clusters_pointer);
+			 extract_sub_cloud.filter(*cluster_cloud_complete);
+
+			 // Stats
+			 double t_seg_end = omp_get_wtime();
+			 std::cout<<"************Stats************\n";
+			 std::cout<< "The number of clusters in the current cluster is : "<< clusters.size()<<"\n";
+			 std::cout<< "The number of clusters which have no circle is: "<< number_of_clusters_without_circle<<"\n";
+			 std::cout << "Segmentation done in " << t_seg_end - t_seg_start << " sec\n";
+
+			 // plots
+
+			 boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_filtered (new pcl::visualization::PCLVisualizer ("3D Viewer2"));
+			 viewer_filtered->setBackgroundColor (0, 0, 0);
+			 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color (cloud, 255, 255, 0);
+			 viewer_filtered->addPointCloud<pcl::PointXYZ> (cluster_cloud_complete, single_color, "cluster_cloud");
+			 //viewer_filtered->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (reg.getColoredCloud (), cloud_normals, 50, 0.05, "normals");
+			 viewer_filtered->addPointCloud<pcl::PointXYZ> (cluster_cloud_circle,"CircleCloud");
+			 pcl::ModelCoefficients circle_to_cylinder;
+			 for (int i; i < circle_inliners_of_all_clusters.size(); i++) {
+				 if (circle_inliners_of_all_clusters[i].indices.size()!= 0){
+
+					 Eigen::Vector3d cylinder_vector(
+						circle_coefficients_of_all_clusters[i].values[4],
+						circle_coefficients_of_all_clusters[i].values[5],
+						circle_coefficients_of_all_clusters[i].values[6]);
+					 Eigen::Vector3d Zaxis(0,0,1);// assuming a positive z axis from the camera to the scene
+					 double dotproduct = Zaxis.dot(cylinder_vector);// it is the cos of the angel since both vectors are normalized there is no need to divide
+					 if(dotproduct>0){// the vectors are between |-90 and 90 degrees| from each other then we revers the direction
+						 circle_coefficients_of_all_clusters[i].values[4] = -circle_coefficients_of_all_clusters[i].values[4];
+						 circle_coefficients_of_all_clusters[i].values[5] = -circle_coefficients_of_all_clusters[i].values[5];
+						 circle_coefficients_of_all_clusters[i].values[6] = -circle_coefficients_of_all_clusters[i].values[6];
+					 }
+					 std::cout<< "The parameters of cylinder "<<i<<" are \n";
+					 std::cout<< "x: "<<circle_coefficients_of_all_clusters[i].values[0]<<"\n";
+					 std::cout<< "y: "<<circle_coefficients_of_all_clusters[i].values[1]<<"\n";
+					 std::cout<< "z: "<<circle_coefficients_of_all_clusters[i].values[2]<<"\n";
+					 std::cout<< "radius: "<<circle_coefficients_of_all_clusters[i].values[3]<<"\n";
+					 std::cout<< "vector x: "<<circle_coefficients_of_all_clusters[i].values[4]<<"\n";
+					 std::cout<< "vector y: "<<circle_coefficients_of_all_clusters[i].values[5]<<"\n";
+					 std::cout<< "vector z: "<<circle_coefficients_of_all_clusters[i].values[6]<<"\n";
+					 std::cout<<"************************\n";
+					 // the order of the Coefficients are different regarding the radis and direction
+					 pcl::ModelCoefficients circle_to_cylinder;
+					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[0]);
+					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[1]);
+					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[2]);
+					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[4]);
+					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[5]);
+					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[6]);
+					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[3]);
+					 viewer_filtered->addCylinder(circle_to_cylinder,"Circle"+i);
+			 }
+			 }
+
+
+			 boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+			 viewer->setBackgroundColor (0, 0, 0);
+			 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(reg.getColoredCloud ());
+			 viewer->addPointCloud<pcl::PointXYZRGB> (reg.getColoredCloud (), rgb, "sample cloud");
+			 viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (reg.getColoredCloud (), cloud_normals, 50, 0.05, "normals");
+			 viewer->addPointCloud<pcl::PointXYZ> (cluster_cloud_circle,"CircleCloud");
+			 while (!viewer->wasStopped() && ! viewer_filtered->wasStopped()){
+				 viewer->spinOnce(100);
+				 viewer_filtered->spinOnce(100);
+			 			   }
+
+		}
+
+	// draw down-sampled and workspace reduced cloud
+	cloud_plot = cloud;
+
+
+  // set plotting within handle search on/off
+  bool plots_hands;
+  if (plotting_mode_ == PCL_PLOTTING)
+		plots_hands = true;
+  else
+		plots_hands = false;
+
+	// find hand configurations
+  HandSearch hand_search(finger_width_, hand_outer_diameter_, hand_depth_, hand_height_, init_bite_, num_threads_,
+		num_samples_, plots_hands);
+	hand_list = hand_search.findHands(cloud, pts_cam_source, indices, cloud_plot, calculates_antipodal, uses_clustering);
+
+	// remove hands at boundaries of workspace
+	if (filters_boundaries_)
+  {
+    std::cout << "Filtering out hands close to workspace boundaries ...\n";
+    hand_list = filterHands(hand_list);
+    std::cout << " # hands left: " << hand_list.size() << "\n";
+  }
+
+	double t2 = omp_get_wtime();
+	std::cout << "Hand localization done in " << t2 - t0 << " sec\n";
+
+	if (plotting_mode_ == PCL_PLOTTING)
+	{
+		plot_.plotHands(hand_list, cloud_plot, "");
+	}
+	else if (plotting_mode_ == RVIZ_PLOTTING)
+	{
+		plot_.plotGraspsRviz(hand_list, visuals_frame_);
+	}
+
+	return hand_list;
+}
+
+
+std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& cloud_in, int size_left,
+	const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering)// the original function
 {		
 	double t0 = omp_get_wtime();
 	std::vector<GraspHypothesis> hand_list;
@@ -118,7 +470,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 		std::cout << " PointCloud representing the non-planar component: " << cloud->points.size()
       << " data points." << std::endl;
 	}
-	bool use_region_growing = true;
+	bool use_region_growing = false;
 		if (use_region_growing)
 		{
 			double t_seg_start = omp_get_wtime();
@@ -372,15 +724,15 @@ std::vector<GraspHypothesis> Localization::predictAntipodalHands(const std::vect
 }
 
 std::vector<GraspHypothesis> Localization::localizeHands(const std::string& pcd_filename_left,
-	const std::string& pcd_filename_right, bool calculates_antipodal, bool uses_clustering)
+	const std::string& pcd_filename_right, bool calculates_antipodal, bool uses_clustering, bool use_suction)
 {
 	std::vector<int> indices(0);
-	return localizeHands(pcd_filename_left, pcd_filename_right, indices, calculates_antipodal, uses_clustering);
+	return localizeHands(pcd_filename_left, pcd_filename_right, indices, calculates_antipodal, uses_clustering, use_suction);
 }
 
 std::vector<GraspHypothesis> Localization::localizeHands(const std::string& pcd_filename_left,
 	const std::string& pcd_filename_right, const std::vector<int>& indices, bool calculates_antipodal,
-	bool uses_clustering)
+	bool uses_clustering, bool use_suction)
 {
 	double t0 = omp_get_wtime();
 
@@ -414,8 +766,12 @@ std::vector<GraspHypothesis> Localization::localizeHands(const std::string& pcd_
 	std::cout << "Concatenating point clouds ...\n";
 	PointCloud::Ptr cloud(new PointCloud);
 	*cloud = *cloud_left + *cloud_right;
-
-	return localizeHands(cloud, cloud_left->size(), indices, calculates_antipodal, uses_clustering);
+	if (use_suction)
+		return localizeSuctionGrasps(cloud, cloud_left->size(), indices,
+				calculates_antipodal, uses_clustering);
+	else
+		return localizeHands(cloud, cloud_left->size(), indices,
+				calculates_antipodal, uses_clustering);
 }
 
 void Localization::filterWorkspace(const PointCloud::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,

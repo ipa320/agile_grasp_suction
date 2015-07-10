@@ -174,7 +174,7 @@ public:
   /**
    * \brief Repeatedly localize suction grasps in the input point cloud.
   */
-  void localizeSuctionGrasps();
+  void findSuctionGrasps();
 
 private:
 	

@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 								-0.3501, -0.0002, 0.9367, 0.0554, 
 								0, 0, 0, 1;
 
-		// set-up parameters for the hand search
+		// set-up parameters for the hand search (fingers)
 		Localization loc(num_threads, false, plots_hands);
 		loc.setCameraTransforms(base_tf * sqrt_tf.inverse(), base_tf * sqrt_tf);
 		loc.setNumSamples(num_samples);
@@ -102,6 +102,22 @@ int main(int argc, char** argv)
 		loc.setHandDepth(0.06);
 		loc.setInitBite(0.015);
 		loc.setHandHeight(0.02);
+
+		/**  Segmentation(Region Growing) */
+		  loc.setNormalRadiusSearch(0.01);
+		  loc.setNumOfKdTreeNeighbors(30);
+		  loc.setAngleThresholdBetweenNormals(3.5);
+		  loc.setCurvatureThreshold(1.0);
+		  loc.setMinimumSizeOfClusterAllowed(300);
+		  /**  Parameters for segmentation (circle detection) or hand geometry parameters */
+		  loc.setMinDetectedRadius(0.02);
+		  loc.setMaxDetectedRadius(0.03);
+		  loc.setAngleTollerance(4.0);
+		  loc.setNormalDistanceWeight(0.1);
+		  loc.setMaxNumberOfIterationsCircleDetection(1000);
+		  loc.setSegmentationDistanceThreshold(0.004);
+
+		// set-up parameters for the hand search (suction)
 
 		// collect training data for the SVM from each PCD file
 		std::cout << "Acquiring training data ...\n";
@@ -131,7 +147,8 @@ int main(int argc, char** argv)
 			}
 
 			loc.setWorkspace(workspace_mat.row(i));
-			std::vector<GraspHypothesis> hands = loc.localizeHands(file_left, file_right, true, true);// bool calculates_antipodal, bool uses_clustering
+			bool use_suction = true;
+			std::vector<GraspHypothesis> hands = loc.localizeHands(file_left, file_right, true, true,use_suction);// bool calculates_antipodal, bool uses_clustering
 			hand_list.insert(hand_list.end(), hands.begin(), hands.end());
       hand_list_sizes[i] = hand_list.size();
       std::cout << i << ") # hands: " << hands.size() << std::endl;

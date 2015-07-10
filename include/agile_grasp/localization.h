@@ -127,6 +127,17 @@ public:
 	 * \param uses_clustering whether clustering is used for processing the point cloud
 	 * \return the list of grasp hypotheses found
 	*/
+	std::vector<GraspHypothesis> localizeSuctionGrasps(const PointCloud::Ptr& cloud_in, int size_left,
+			const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering);
+
+	/**
+	 * \brief Localize hands in a given point cloud. this is the main localizeHands function
+	 * \param cloud_in the input point cloud
+	 * \param indices the set of point cloud indices for which point neighborhoods are found
+	 * \param calculates_antipodal whether the grasp hypotheses are checked for being antipodal
+	 * \param uses_clustering whether clustering is used for processing the point cloud
+	 * \return the list of grasp hypotheses found
+	*/
 	std::vector<GraspHypothesis> localizeHands(const PointCloud::Ptr& cloud_in, int size_left,
 			const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering);
 	
@@ -140,7 +151,7 @@ public:
 	*/
 	std::vector<GraspHypothesis> localizeHands(const std::string& pcd_filename_left,
 			const std::string& pcd_filename_right, bool calculates_antipodal = false, 
-      bool uses_clustering = false);
+      bool uses_clustering = false, bool use_suction=false);
 	
 	/**
 	 * \brief Localize hands given two point cloud files and a set of point cloud indices.
@@ -153,7 +164,7 @@ public:
 	*/
 	std::vector<GraspHypothesis> localizeHands(const std::string& pcd_filename_left,
 			const std::string& pcd_filename_right, const std::vector<int>& indices, 
-      bool calculates_antipodal =	false, bool uses_clustering = false);
+      bool calculates_antipodal =	false, bool uses_clustering = false, bool use_suction=false);
 	
 	/**
 	 * \brief Set the camera poses.

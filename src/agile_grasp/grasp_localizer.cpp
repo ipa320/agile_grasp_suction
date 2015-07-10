@@ -172,7 +172,7 @@ void GraspLocalizer::localizeGrasps()
   }
 }
 
-void GraspLocalizer::localizeSuctionGrasps()
+void GraspLocalizer::findSuctionGrasps()
 {
   ros::Rate rate(1);
   std::vector<int> indices(0);
@@ -193,7 +193,7 @@ void GraspLocalizer::localizeSuctionGrasps()
       {
         hands_ = localization_->localizeHands(cloud_left_, cloud_left_->size(), indices, false, false);
 			}
-
+// to be changed
       antipodal_hands_ = localization_->predictAntipodalHands(hands_, svm_file_name_);
       handles_ = localization_->findHandles(antipodal_hands_, min_inliers_, 0.005);
 
