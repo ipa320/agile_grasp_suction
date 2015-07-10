@@ -170,7 +170,9 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 			double min_detected_radius = 0.02;
 			double max_detected_radius = 0.03;
 			double angle_tollerance = 4.0; // [degrees] the tollerance for the circle detection from the given axis
-
+			double normal_distance_weight = 0.1;
+			int max_number_of_iterations_circle_detection = 1000;
+			double segmentation_distance_threshold = 0.004;
 			//const boost::shared_ptr aPtr(clusters);
 
 			for (int i; i < clusters.size(); i++) {
@@ -194,9 +196,9 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 				//seg_cluster.setModelType (pcl::SACMODEL_CIRCLE2D);
 				seg_cluster.setModelType (pcl::SACMODEL_CIRCLE3D);
 				seg_cluster.setMethodType (pcl::SAC_RANSAC);
-				seg_cluster.setNormalDistanceWeight (0.1);
-				seg_cluster.setMaxIterations (10000);
-				seg_cluster.setDistanceThreshold (0.004);// distance from model to be considerd an inliner
+				seg_cluster.setNormalDistanceWeight (normal_distance_weight);
+				seg_cluster.setMaxIterations (max_number_of_iterations_circle_detection);
+				seg_cluster.setDistanceThreshold (segmentation_distance_threshold);// distance from model to be considerd an inliner
 				seg_cluster.setRadiusLimits (min_detected_radius, max_detected_radius);
 				Eigen::Vector3f Axis = cluster_normals->points[0].getNormalVector3fMap();
 				seg_cluster.setAxis(Axis);

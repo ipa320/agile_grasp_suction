@@ -272,7 +272,53 @@ public:
 		plot_.createVisualPublishers(node, marker_lifetime);
 		visuals_frame_ = frame;
 	}
-	
+
+	void setAngleThresholdBetweenNormals(double angleThresholdBetweenNormals) {
+		angle_threshold_between_normals_ = angleThresholdBetweenNormals;
+	}
+
+	void setAngleTollerance(double angleTollerance) {
+		angle_tollerance_ = angleTollerance;
+	}
+
+	void setCurvatureThreshold(double curvatureThreshold) {
+		curvature_threshold_ = curvatureThreshold;
+	}
+
+	void setMaxDetectedRadius(double maxDetectedRadius) {
+		max_detected_radius_ = maxDetectedRadius;
+	}
+
+	void setMaxNumberOfIterationsCircleDetection(
+			int maxNumberOfIterationsCircleDetection) {
+		max_number_of_iterations_circle_detection_ =
+				maxNumberOfIterationsCircleDetection;
+	}
+
+	void setMinDetectedRadius(double minDetectedRadius) {
+		min_detected_radius_ = minDetectedRadius;
+	}
+
+	void setMinimumSizeOfClusterAllowed(int minimumSizeOfClusterAllowed) {
+		minimum_size_of_cluster_allowed_ = minimumSizeOfClusterAllowed;
+	}
+
+	void setNormalDistanceWeight(double normalDistanceWeight) {
+		normal_distance_weight_ = normalDistanceWeight;
+	}
+
+	void setNormalRadiusSearch(double normalRadiusSearch) {
+		normal_radius_search_ = normalRadiusSearch;
+	}
+
+	void setNumOfKdTreeNeighbors(int numOfKdTreeNeighbors) {
+		num_of_kdTree_neighbors_ = numOfKdTreeNeighbors;
+	}
+
+	void setSegmentationDistanceThreshold(
+			double segmentationDistanceThreshold) {
+		segmentation_distance_threshold_ = segmentationDistanceThreshold;
+	}
 
 private:
 
@@ -337,13 +383,15 @@ private:
 	*/ 
 	Eigen::Vector3i floorVector(const Eigen::Vector3d& a);
 
+	//common used variables for both suction and finger grippers
 	Plot plot_; ///< the plot object
-	Eigen::Matrix4d cam_tf_left_, cam_tf_right_; ///< the camera poses
 	Eigen::VectorXd workspace_; ///< the robot's workspace dimensions
 	Eigen::Matrix3Xd cloud_normals_; ///< the normals for each point in the point cloud
 	PointCloud::Ptr cloud_; ///< the input point cloud
 	int num_threads_; ///< the number of CPU threads used in the search
-	int num_samples_; ///< the number of samples used in the search
+
+	//parameters used only for finger grippers
+	Eigen::Matrix4d cam_tf_left_, cam_tf_right_; ///< the camera poses
 	double nn_radius_taubin_; ///< the radius of the neighborhood search used in the grasp hypothesis search
 	double nn_radius_hands_; ///< the radius of the neighborhood search used in the quadric fit
 	double finger_width_; ///< width of the fingers
@@ -351,7 +399,26 @@ private:
 	double hand_depth_; ///< hand depth (finger length)
 	double hand_height_; ///< hand height
 	double init_bite_; ///< initial bite
-  bool plots_camera_sources_; ///< whether the camera source is plotted for each point in the point cloud	
+	int num_samples_; ///< the number of samples used in the search
+
+	//parameters used only for suction grippers
+	/**  Segmentation(Region Growing) */
+	double normal_radius_search_;//Sphere radius that is to be used for determining the nearest neighbors used for the normal detection
+	int num_of_kdTree_neighbors_;// number of neighbors to be sampled from the KdTree
+	double angle_threshold_between_normals_;// [degrees]
+	double curvature_threshold_;// the curvature diff threshold of the region such that the surfaces are considered to be a region
+	int minimum_size_of_cluster_allowed_;// the minimum number of points to be detected to consider a region a group
+
+	/**  Parameters for segmentation (circle detection) or hand geometry parameters */
+	double min_detected_radius_;//[meters]
+	double max_detected_radius_;//[meters]
+	double angle_tollerance_; // [degrees] the tolerance for the circle detection from the given axis
+	double normal_distance_weight_;// range [0-1]
+	int max_number_of_iterations_circle_detection_;
+	double segmentation_distance_threshold_;//[meters] distance threshold from circle model, points further than the threshold are not considered
+
+	//plotting parameters
+	bool plots_camera_sources_; ///< whether the camera source is plotted for each point in the point cloud
 	bool filters_boundaries_; ///< whether grasp hypotheses close to the workspace boundaries are filtered out
 	int plotting_mode_; ///< what plotting mode is used
 	std::string visuals_frame_; ///< visualization frame for Rviz

@@ -28,7 +28,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "find_grasps");
   ros::NodeHandle node("~");
   
-  GraspLocalizer::Parameters params;
+  GraspLocalizer::ParametersFinger params;
   
   // camera transforms (poses)
   Eigen::Matrix4d base_tf, sqrt_tf;

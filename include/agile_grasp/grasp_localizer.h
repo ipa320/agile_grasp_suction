@@ -70,10 +70,45 @@ class GraspLocalizer
 {
 public:
 
+	/**
+	   * \brief Parameters for hand search and handle search.
+	  */
+	struct ParametersSuction
+	  {
+
+	/**  Segmentation(Region Growing) */
+	double normal_radius_search_;//Sphere radius that is to be used for determining the nearest neighbors used for the normal detection
+	int num_of_kdTree_neighbors_;// number of neighbors to be sampled from the KdTree
+	double angle_threshold_between_normals_;// [degrees]
+	double curvature_threshold_;// the curvature diff threshold of the region such that the surfaces are considered to be a region
+	int minimum_size_of_cluster_allowed_;
+
+	/**  Parameters for segmentation (circle detection) or hand geometry parameters */
+	double min_detected_radius_;//[meters]
+	double max_detected_radius_;//[meters]
+	double angle_tollerance_; // [degrees] the tollerance for the circle detection from the given axis
+	double normal_distance_weight_;// range [0-1]
+	int max_number_of_iterations_circle_detection_;
+	double segmentation_distance_threshold_;//[meters] distance threshold from circle model, points further than the threshold are not considered
+
+	/** Input parameters*/
+    int num_threads_;
+    int num_clouds_;// the number of clouds to be received
+
+    /** Environment parameters */
+    Eigen::VectorXd workspace_;
+
+    // visualization parameters
+	int plotting_mode_;
+	double marker_lifetime_;
+
+	std::string Type_;
+	  };
+
   /**
    * \brief Parameters for hand search and handle search.
   */
-  struct Parameters
+  struct ParametersFinger
   {
     /** hand search parameters */
     int num_threads_;
@@ -93,9 +128,11 @@ public:
     // handle search parameters
     int min_inliers_;
     
-    // visualization parameters
-		int plotting_mode_;
-		double marker_lifetime_;
+// visualization parameters
+	int plotting_mode_;
+	double marker_lifetime_;
+
+	std::string Type_;
   };
   
   /**
@@ -105,11 +142,24 @@ public:
 	 * \param cloud_frame the coordinate frame of the point cloud
 	 * \param cloud_type the type of the point cloud message (see constants for input point cloud types)
 	 * \param svm_file_name the location and filename of the SVM
-	 * \param params a set of parameters for hand search and handle search
+	 * \param params a set of parameters for hand search and handle search here the suction parameters are the input
 	*/
   GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_topic, 
     const std::string& cloud_frame, int cloud_type, const std::string& svm_file_name,  
-    const Parameters& params);
+    const ParametersSuction& params);
+
+  /**
+	 * \brief Constructor.
+	 * \param node the ROS node
+	 * \param cloud_topic the ROS topic that contains the input point cloud
+	 * \param cloud_frame the coordinate frame of the point cloud
+	 * \param cloud_type the type of the point cloud message (see constants for input point cloud types)
+	 * \param svm_file_name the location and filename of the SVM
+	 * \param params a set of parameters for hand search and handle search here the finger parameters are the input
+	*/
+  GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_topic,
+    const std::string& cloud_frame, int cloud_type, const std::string& svm_file_name,
+    const ParametersFinger& params);
   
   /**
    * \brief Destructor.
@@ -120,6 +170,11 @@ public:
    * \brief Repeatedly localize grasps in the input point cloud.
   */
   void localizeGrasps();
+
+  /**
+   * \brief Repeatedly localize suction grasps in the input point cloud.
+  */
+  void localizeSuctionGrasps();
 
 private:
 	

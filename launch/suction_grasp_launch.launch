@@ -1,0 +1,41 @@
+<launch>
+	<node name="find_suction_grasps" pkg="agile_grasp" type="find_grasps" output="screen">
+  	<param name="cloud_topic" value="/camera/depth_registered/points" />
+    <param name="cloud_frame" value="/camera_rgb_optical_frame" />
+    <param name="cloud_type" value="0" />
+    <param name="num_threads" value="4" />
+    <param name="num_clouds" value="1" />
+    
+    <param name="min_inliers" value="10" />
+    <param name="plotting" value="1" />
+    <param name="marker_lifetime" value="5" />
+    
+
+    
+<!-- // parameters for segmentation (Region Growing)-->
+	<param name="double normal_radius_search" value="0.01" /><!-- area for which normals are calculated -->
+	<param name="int num_of_kdTree_neighbours" value="30" />
+	<!-- in degrees -->
+	<param name="double angle_threshold_between_normals" value="3.5" /> 
+	<param name="double curvature_threshold" value="1.0" />
+	<param name="int minimum_size_of_cluster_allowed" value="300" />
+<!-- // parameters for segmentation (circle detection)-->			
+	<param name="double min_detected_radius" value="0.02" />
+	<param name="double max_detected_radius" value="0.03" />
+	<!-- [degrees] the tollerance for the circle detection from the given axis-->
+	<param name="double angle_tollerance" value="4.0"  />
+	<param name="double normal_distance_weight" value="0.1" />
+	<param name="int max_number_of_iterations_circle_detection" value="1000" />
+	<param name="double segmentation_distance_threshold" value="0.004" />
+			
+	<param name="marker_lifetime" value="5" />
+	<rosparam param="workspace"> [-10, 10, -10, 10, -10, 10] </rosparam>
+    <rosparam param="camera_pose"> [0, 0.445417, 0.895323, 0.215, 
+              1, 0, 0, -0.015, 
+              0, 0.895323, -0.445417, 0.23, 
+              0, 0, 0, 1] </rosparam>
+			
+			<!-- -->
+    
+	</node>
+</launch>
