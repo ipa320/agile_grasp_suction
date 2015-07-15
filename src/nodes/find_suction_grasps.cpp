@@ -4,7 +4,9 @@
 
 const std::string CLOUD_TOPIC = "input_cloud";
 const std::string CLOUD_FRAME = "camera_rgb_optical_frame";
+const std::string END_EFFECTOR_FRAME = "camera_rgb_optical_frame";
 const int CLOUD_TYPE = 0;
+const int NUM_CLOUDS = 1;
 const int NUM_THREADS = 1;
 const double WORKSPACE[6] = {-10, 10, -10, 10, -10, 10};
 const std::string CLOUD_TYPES[2] = {"sensor_msgs/PointCloud2", "grasp_affordances/CloudSized"};
@@ -39,11 +41,13 @@ int main(int argc, char** argv)
   // read ROS parameters
   std::string cloud_topic;
   std::string cloud_frame;
+  std::string end_effector_frame;
   std::vector<double> workspace;
   int cloud_type;
 
   node.param("cloud_topic", cloud_topic, CLOUD_TOPIC);// name to be searched for, value where info is stored, default
   node.param("cloud_frame", cloud_frame, CLOUD_FRAME);
+  node.param("end_effector_frame",end_effector_frame,END_EFFECTOR_FRAME);
   node.param("cloud_type", cloud_type, CLOUD_TYPE);
 
   // Program parameters
@@ -55,19 +59,19 @@ int main(int argc, char** argv)
   node.param("marker_lifetime", params.marker_lifetime_, 0.0);
 
   // parameters for segmentation
-  node.param("num_clouds", params.normal_radius_search_, NORMAL_RADIUS_SEARCH);
-  node.param("num_clouds", params.num_of_kdTree_neighbors_, NUM_OF_KDTREE_NEIGHBOURS);
-  node.param("num_clouds", params.angle_threshold_between_normals_, ANGLE_THRESHHOLD_BETWEEN_NORMALS);
-  node.param("num_clouds", params.curvature_threshold_, CURVATURE_THRESHOLD);
-  node.param("num_clouds", params.minimum_size_of_cluster_allowed_, MINUMUM_SIZE_OF_CLUSTER_ALLOWED);
+  node.param("normal_radius_search", params.normal_radius_search_, NORMAL_RADIUS_SEARCH);
+  node.param("num_of_kdTree_neighbours", params.num_of_kdTree_neighbors_, NUM_OF_KDTREE_NEIGHBOURS);
+  node.param("angle_threshold_between_normals", params.angle_threshold_between_normals_, ANGLE_THRESHHOLD_BETWEEN_NORMALS);
+  node.param("curvature_threshold", params.curvature_threshold_, CURVATURE_THRESHOLD);
+  node.param("minimum_size_of_cluster_allowed", params.minimum_size_of_cluster_allowed_, MINUMUM_SIZE_OF_CLUSTER_ALLOWED);
 
   // parameters for segmentation (circle detection)
-  node.param("num_clouds", params.min_detected_radius_, MIN_DETECTED_RADIUS);
-  node.param("num_clouds", params.max_detected_radius_, MAX_DETECTED_RADIUS);
-  node.param("num_clouds", params.angle_tollerance_, ANGLE_TOLERANCE);
-  node.param("num_clouds", params.normal_distance_weight_, NORMAL_DISTANCE_WEIGHT);
-  node.param("num_clouds", params.max_number_of_iterations_circle_detection_, MAX_NR_ITER_CIRCLE_DETECTION);
-  node.param("num_clouds", params.segmentation_distance_threshold_, SEGMENTATION_DIST_THREHOLD);
+  node.param("min_detected_radius", params.min_detected_radius_, MIN_DETECTED_RADIUS);
+  node.param("max_detected_radius", params.max_detected_radius_, MAX_DETECTED_RADIUS);
+  node.param("angle_tollerance", params.angle_tollerance_, ANGLE_TOLERANCE);
+  node.param("normal_distance_weight", params.normal_distance_weight_, NORMAL_DISTANCE_WEIGHT);
+  node.param("max_number_of_iterations_circle_detection", params.max_number_of_iterations_circle_detection_, MAX_NR_ITER_CIRCLE_DETECTION);
+  node.param("segmentation_distance_threshold", params.segmentation_distance_threshold_, SEGMENTATION_DIST_THREHOLD);
   node.getParam("workspace", workspace);
 
   Eigen::VectorXd ws(6);
@@ -80,6 +84,7 @@ int main(int argc, char** argv)
   std::cout << " Input\n";
   std::cout << "  cloud_topic: " << cloud_topic << "\n";
   std::cout << "  cloud_frame: " << cloud_frame << "\n";
+  std::cout << "  end_effector_frame: " << cloud_frame << "\n";
   std::cout << "  cloud_type: " << CLOUD_TYPES[cloud_type] << "\n";
 
   std::cout << " Segmentation(Region Growing)\n";
@@ -109,8 +114,9 @@ int main(int argc, char** argv)
   std::cout << "  marker_lifetime: " << params.marker_lifetime_ << "\n";
 
   std::string svm_file_name = "";
-  GraspLocalizer loc(node, cloud_topic, cloud_frame, cloud_type, svm_file_name, params);// there are 2 constructors depending of whcih type of struct params has
-//  loc.localizeGrasps();
+  GraspLocalizer loc(node, cloud_topic, cloud_frame, end_effector_frame, cloud_type, svm_file_name, params);// there are 2 constructors depending of whcih type of struct params has
+  std::cout << "GraspLocalizerObj created...\n";
+//  ros::spin();
   loc.findSuctionGrasps();
 
 	return 0;

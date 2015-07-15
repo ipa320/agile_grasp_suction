@@ -131,9 +131,9 @@ PointCloudNormal::Ptr Plot::createNormalsCloud(
         p.y = grasp_bottom(1);
         p.z = grasp_bottom(2);
       }
-      p.normal[0] = -hand_approach(0);
-      p.normal[1] = -hand_approach(1);
-      p.normal[2] = -hand_approach(2);
+      p.normal[0] = hand_approach(0);
+      p.normal[1] = hand_approach(1);
+      p.normal[2] = hand_approach(2);
       cloud->points.push_back(p);
     }
 	}

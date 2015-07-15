@@ -47,7 +47,7 @@ set(CMAKE_CXX_FLAGS "-DNDEBUG -O3 -fopenmp -Wno-deprecated -Wenum-compare")
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(FILES CloudSized.msg Grasp.msg Grasps.msg)
+add_message_files(FILES CloudSized.msg Grasp.msg Grasps.msg SuctionGrasp.msg SuctionGrasps.msg)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs)
@@ -132,6 +132,7 @@ add_executable(opencv_test src/tests/opencv_test.cpp)
 add_executable(train_svm src/nodes/train.cpp)
 add_executable(test_svm src/nodes/test.cpp)
 add_executable(find_grasps src/nodes/find_grasps.cpp)
+add_executable(find_suction_grasps src/nodes/find_suction_grasps.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -152,6 +153,7 @@ target_link_libraries(test_svm learning localization ${PCL_LIBRARIES})
 target_link_libraries(opencv_test ${OpenCV_LIBRARIES})
 target_link_libraries(handle rotating_hand)
 target_link_libraries(find_grasps grasp_localizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(find_suction_grasps grasp_localizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(grasp_localizer handle localization rotating_hand ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(handle_search handle rotating_hand ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(plot grasp_hypothesis handle quadric ${catkin_LIBRARIES} ${PCL_LIBRARIES})

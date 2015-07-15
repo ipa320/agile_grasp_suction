@@ -53,6 +53,14 @@ public:
 	GraspHypothesis() : cam_source_(-1) {}
 
 	/**
+	 * constructor used for suction grasps
+	 */
+	GraspHypothesis(const Eigen::Vector3d& surface_point,
+			const Eigen::Vector3d& approach_vector,const Eigen::Vector3d& x, const Eigen::Vector3d& y) :
+			cam_source_(-1), grasp_surface_(surface_point), approach_(
+					approach_vector), axis_(x), binormal_(y) {}
+
+	/**
 	 * \brief Constructor.
 	 * \param axis the hand axis
 	 * \param approach the grasp approach vector

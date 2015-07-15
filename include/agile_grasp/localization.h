@@ -54,7 +54,6 @@
 #include <pcl/segmentation/region_growing.h>
 // PCL used for circle detection
 #include <pcl/sample_consensus/ransac.h>
-//#include <pcl/sample_consensus/sac_model_circle.h>
 #include <pcl/sample_consensus/sac_model_circle3d.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/sample_consensus/method_types.h>
@@ -70,7 +69,7 @@
 #include <agile_grasp/plot.h>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-
+#include <pcl/filters/voxel_grid.h>
 
 /** Localization class
  *
@@ -99,7 +98,7 @@ public:
 	Localization(int num_threads, bool filters_boundaries, int plotting_mode) :
 			num_threads_(num_threads), filters_boundaries_(filters_boundaries), 
       plotting_mode_(plotting_mode), plots_camera_sources_(false), 
-      cloud_(new PointCloud)
+      cloud_(new PointCloud), viewer_comb_(new pcl::visualization::PCLVisualizer ("Algorithim output"))
 	{ }
 	
 	/**
@@ -368,6 +367,21 @@ private:
 	*/
 	void voxelizeCloud(const PointCloud::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,
 			PointCloud::Ptr& cloud_out, Eigen::VectorXi& pts_cam_source_out, double cell_size);
+
+	/**
+	 * \brief Preproces the point cloud and keep track of the camera sources. The function removes NAN points,
+	 * filters the points out side the work space and if the uses_clustering flag is true removes the largest plane in the Point cloud
+	 * \param[in] cloud_in the point cloud to preprocessed
+	 * \param[out] a copy of the pointcloud after processing used for plotting
+	 * \param[in] the size of the point cloud on the left side
+	 * \param[out] uses_clustering the flag determining if the largest plane should be removed
+	 * \retrun the Preprocessed point cloud
+	*
+
+	void Localization::PointCloudPreProcessing(
+			const PointCloud::Ptr& cloud_in, PointCloud::Ptr& cloud_plot,
+			int size_left, bool uses_clustering);
+	*/
 	
 	/**
 	 * \brief Filter out points in the point cloud that lie outside the workspace dimensions and keep 
@@ -393,6 +407,11 @@ private:
 	 * \return the rounded down 3D-vector
 	*/ 
 	Eigen::Vector3i floorVector(const Eigen::Vector3d& a);
+
+//	void addCylindersToPlot(
+//			const boost::shared_ptr<pcl::visualization::PCLVisualizer>& plot_obj,
+//			std::vector<pcl::PointIndices>& circle_inliners,
+//			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
 
 	//common used variables for both suction and finger grippers
 	Plot plot_; ///< the plot object
@@ -433,6 +452,7 @@ private:
 	bool filters_boundaries_; ///< whether grasp hypotheses close to the workspace boundaries are filtered out
 	int plotting_mode_; ///< what plotting mode is used
 	std::string visuals_frame_; ///< visualization frame for Rviz
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb_;// plotting object used for multiple cloud visualization
 	
 	/** constants for plotting modes */
 	static const int NO_PLOTTING = 0; ///< no plotting

@@ -52,6 +52,9 @@
 #include <agile_grasp/localization.h>
 #include <agile_grasp/rotating_hand.h>
 
+#include <agile_grasp/SuctionGrasp.h>
+#include <agile_grasp/SuctionGrasps.h>
+#include <tf/transform_broadcaster.h>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
@@ -145,7 +148,7 @@ public:
 	 * \param params a set of parameters for hand search and handle search here the suction parameters are the input
 	*/
   GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_topic, 
-    const std::string& cloud_frame, int cloud_type, const std::string& svm_file_name,  
+    const std::string& cloud_frame, const std::string& end_effector_frame, int cloud_type, const std::string& svm_file_name,
     const ParametersSuction& params);
 
   /**
@@ -222,8 +225,25 @@ private:
 	*/
   agile_grasp::Grasp createGraspMsg(const GraspHypothesis& hand);
   
+  /**
+ 	 * \brief Create a grasp message from a list of grasp hypotheses.
+ 	 * \param hands the set of grasp hypotheses from which the grasps message is created
+ 	*/
+   agile_grasp::SuctionGrasps createSuctionGraspsMsg(const std::vector<GraspHypothesis>& hands);
+
+   /**
+ 	 * \brief Create a grasp message from a grasp hypothesis.
+ 	 * \param hand the grasp hypothesis from which the grasp message is created
+ 	*/
+   agile_grasp::SuctionGrasp createSuctionGraspMsg(const GraspHypothesis& hand);
+   /**
+	 *\breif a function used to broadcast the frames corresponding to the grasps to the tf tree
+	 */
+//   void GraspLocalizer::PublishTF(const std::vector<GraspHypothesis>& hands);
+
   std::string svm_file_name_; ///< the location and filename of the SVM
   std::string cloud_frame_; ///< the coordinate frame of the point cloud
+  std::string end_effector_frame_; ///< the coordinate frame name of the end effector
   PointCloud::Ptr cloud_left_, cloud_right_; ///< the point clouds
   ros::Subscriber cloud_sub_; ///< the subscriber for the point cloud topic
   ros::Publisher grasps_pub_; ///< the publisher for the antipodal grasps
@@ -236,7 +256,7 @@ private:
   int size_left_; ///< the size of the first point cloud
   int min_inliers_; ///< the minimum number of inliers for the handle search
   bool plots_handles_; ///< whether handles are plotted
-  
+  static tf::TransformBroadcaster br_;/// the broadcaster used to update the TF tree
   /** constants for input point cloud types */
 	static const int POINT_CLOUD_2 = 0; ///< sensor_msgs/PointCloud2
 	static const int CLOUD_SIZED = 1; ///< agile_grasp/CloudSized
