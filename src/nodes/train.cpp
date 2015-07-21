@@ -116,6 +116,7 @@ int main(int argc, char** argv)
 		  loc.setNormalDistanceWeight(0.1);
 		  loc.setMaxNumberOfIterationsCircleDetection(1000);
 		  loc.setSegmentationDistanceThreshold(0.004);
+		  loc.setAreaConsiderationRatio(0.9);
 
 		// set-up parameters for the hand search (suction)
 

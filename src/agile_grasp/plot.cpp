@@ -21,13 +21,13 @@ void Plot::plotHands(const std::vector<GraspHypothesis>& hand_list, const PointC
 }
 
 
-void Plot::plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr& cloud)
+void Plot::plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr& cloud,std::string Title)
 {
 	PointCloud::Ptr samples_cloud(new PointCloud);
 	for (int i = 0; i < index_list.size(); i++)
 		samples_cloud->points.push_back(cloud->points[index_list[i]]);
 
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Samples");  
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer(Title);
 	viewer->addPointCloud<pcl::PointXYZ>(cloud, "registered point cloud");
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
 		"registered point cloud");
@@ -35,18 +35,18 @@ void Plot::plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "samples cloud");
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0,
 		"samples cloud");
-
+	viewer->addCoordinateSystem(0.3);
 	runViewer(viewer);
 }
 
-void Plot::plotCloud(const PointCloud::Ptr& cloud)
+void Plot::plotCloud(const PointCloud::Ptr& cloud,std::string Title)
 {
 	std::vector<int> indexx(cloud->size());
 	for (int i = 0;i<indexx.size();i++)
 			{
 				indexx[i] = i;
 			}
-	plotSamples(indexx,cloud);
+	plotSamples(indexx,cloud,Title);
 }
 
 

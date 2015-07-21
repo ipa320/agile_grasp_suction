@@ -69,7 +69,8 @@
 #include <agile_grasp/plot.h>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-#include <pcl/filters/voxel_grid.h>
+#include <pcl/surface/convex_hull.h>
+#include <pcl/filters/project_inliers.h>
 
 /** Localization class
  *
@@ -99,7 +100,19 @@ public:
 			num_threads_(num_threads), filters_boundaries_(filters_boundaries), 
       plotting_mode_(plotting_mode), plots_camera_sources_(false), 
       cloud_(new PointCloud), viewer_comb_(new pcl::visualization::PCLVisualizer ("Algorithim output"))
-	{ }
+	{
+		first_plot_ = true;
+		viewer_point_indicies_.resize(4);
+		for(int i=0; i<viewer_point_indicies_.size();i++)
+		{
+			viewer_point_indicies_[i] = i;
+		}
+
+		 viewer_comb_->createViewPort (0.0, 0.5, 0.5, 1.0, viewer_point_indicies_[0]);
+		 viewer_comb_->createViewPort (0.5, 0.5, 1.0, 1.0, viewer_point_indicies_[1]);
+		 viewer_comb_->createViewPort (0.0, 0.0, 0.5, 0.5, viewer_point_indicies_[2]);
+		 viewer_comb_->createViewPort (0.5, 0.0, 1.0, 0.5, viewer_point_indicies_[3]);
+	}
 	
 	/**
 	 * \brief Find handles given a list of grasp hypotheses.
@@ -127,7 +140,7 @@ public:
 	 * \return the list of grasp hypotheses found
 	*/
 	std::vector<GraspHypothesis> localizeSuctionGrasps(const PointCloud::Ptr& cloud_in, int size_left,
-			const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering);
+			const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering,bool plot_on_flag = true);
 
 	/**
 	 * \brief Localize hands in a given point cloud. this is the main localizeHands function
@@ -330,6 +343,10 @@ public:
 		segmentation_distance_threshold_ = segmentationDistanceThreshold;
 	}
 
+	void setAreaConsiderationRatio(double areaConsiderationRatio) {
+		area_consideration_ratio_ = areaConsiderationRatio;
+	}
+
 private:
 
 	/**
@@ -368,7 +385,7 @@ private:
 	void voxelizeCloud(const PointCloud::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,
 			PointCloud::Ptr& cloud_out, Eigen::VectorXi& pts_cam_source_out, double cell_size);
 
-	/**
+     /**
 	 * \brief Preproces the point cloud and keep track of the camera sources. The function removes NAN points,
 	 * filters the points out side the work space and if the uses_clustering flag is true removes the largest plane in the Point cloud
 	 * \param[in] cloud_in the point cloud to preprocessed
@@ -376,12 +393,12 @@ private:
 	 * \param[in] the size of the point cloud on the left side
 	 * \param[out] uses_clustering the flag determining if the largest plane should be removed
 	 * \retrun the Preprocessed point cloud
-	*
+	 */
 
-	void Localization::PointCloudPreProcessing(
+	PointCloud::Ptr PointCloudPreProcessing(
 			const PointCloud::Ptr& cloud_in, PointCloud::Ptr& cloud_plot,
 			int size_left, bool uses_clustering);
-	*/
+
 	
 	/**
 	 * \brief Filter out points in the point cloud that lie outside the workspace dimensions and keep 
@@ -446,6 +463,7 @@ private:
 	double normal_distance_weight_;// range [0-1]
 	int max_number_of_iterations_circle_detection_;
 	double segmentation_distance_threshold_;//[meters] distance threshold from circle model, points further than the threshold are not considered
+    double area_consideration_ratio_;
 
 	//plotting parameters
 	bool plots_camera_sources_; ///< whether the camera source is plotted for each point in the point cloud
@@ -453,7 +471,9 @@ private:
 	int plotting_mode_; ///< what plotting mode is used
 	std::string visuals_frame_; ///< visualization frame for Rviz
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb_;// plotting object used for multiple cloud visualization
-	
+	std::vector<int> viewer_point_indicies_;
+	bool first_plot_;
+
 	/** constants for plotting modes */
 	static const int NO_PLOTTING = 0; ///< no plotting
 	static const int PCL_PLOTTING = 1; ///< plotting in PCL

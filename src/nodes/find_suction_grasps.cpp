@@ -27,6 +27,7 @@ const double ANGLE_TOLERANCE = 4.0; // [degrees] the tolerance for the circle de
 const double NORMAL_DISTANCE_WEIGHT = 0.1;
 const int MAX_NR_ITER_CIRCLE_DETECTION = 1000;
 const double SEGMENTATION_DIST_THREHOLD = 0.004;
+const double AREA_CONSIDERATION_RATIO= 1.0;
 
 
 
@@ -72,6 +73,7 @@ int main(int argc, char** argv)
   node.param("normal_distance_weight", params.normal_distance_weight_, NORMAL_DISTANCE_WEIGHT);
   node.param("max_number_of_iterations_circle_detection", params.max_number_of_iterations_circle_detection_, MAX_NR_ITER_CIRCLE_DETECTION);
   node.param("segmentation_distance_threshold", params.segmentation_distance_threshold_, SEGMENTATION_DIST_THREHOLD);
+  node.param("area_ratio_to_consider_circle",params.area_consideration_ratio_,AREA_CONSIDERATION_RATIO);
   node.getParam("workspace", workspace);
 
   Eigen::VectorXd ws(6);
@@ -93,6 +95,7 @@ int main(int argc, char** argv)
   std::cout << "  angle threshold between normals: " << params.angle_threshold_between_normals_ << "\n";
   std::cout << "  region curvature threshold: " << params.curvature_threshold_ << "\n";
   std::cout << "  minimum size of cluster allowed: " << params.minimum_size_of_cluster_allowed_ << "\n";
+  std::cout << "  area consideration ratio: " << params.area_consideration_ratio_ << "\n";
 
   std::cout << " Grasp Parameters\n";
   std::cout << "  min detected radius: " << params.min_detected_radius_ << "\n";

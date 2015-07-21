@@ -33,7 +33,7 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
   localization_->setNormalDistanceWeight(params.normal_distance_weight_);
   localization_->setMaxNumberOfIterationsCircleDetection(params.max_number_of_iterations_circle_detection_);
   localization_->setSegmentationDistanceThreshold(params.segmentation_distance_threshold_);
-
+  localization_->setAreaConsiderationRatio(params.area_consideration_ratio_);
 
   if (params.plotting_mode_ == 0)
   {
@@ -173,7 +173,7 @@ void GraspLocalizer::localizeGrasps()
 
 void GraspLocalizer::findSuctionGrasps()
 {
-  ros::Rate rate(1);
+  ros::Rate rate(1.0);
   std::vector<int> indices(0);
 
   int loop_counter = 0;

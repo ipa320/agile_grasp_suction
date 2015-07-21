@@ -93,7 +93,7 @@ public:
 	double normal_distance_weight_;// range [0-1]
 	int max_number_of_iterations_circle_detection_;
 	double segmentation_distance_threshold_;//[meters] distance threshold from circle model, points further than the threshold are not considered
-
+	double area_consideration_ratio_;
 	/** Input parameters*/
     int num_threads_;
     int num_clouds_;// the number of clouds to be received

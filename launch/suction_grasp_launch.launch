@@ -21,8 +21,9 @@
 	<param name="curvature_threshold" value="1.0" />
 	<param name="minimum_size_of_cluster_allowed" value="300" />
 <!-- // parameters for segmentation (circle detection)-->			
-	<param name="min_detected_radius" value="0.02" />
-	<param name="max_detected_radius" value="0.03" />
+	<param name="min_detected_radius" value="0.025" />
+	<param name="max_detected_radius" value="0.035" /> 
+	<param name="area_ratio_to_consider_circle" value="0.9" /> <!-- between 0 and 1 the ratio of to the minimal area clalculated by min_detected_radius to consider a circle grasp-->
 	<!-- [degrees] the tollerance for the circle detection from the given axis-->
 	<param name="angle_tollerance" value="4.0"  />
 	<param name="normal_distance_weight" value="0.1" />
