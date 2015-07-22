@@ -34,167 +34,35 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 		   						num_of_kdTree_neighbours, minimum_size_of_cluster_allowed,segmented_colored_pc);
 
 		   // circle extraction
-		   std::vector<pcl::PointIndices> circle_inliners_of_all_clusters_test;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
-		   			circle_inliners_of_all_clusters_test.resize(clusters.size());
-		   std::vector<pcl::ModelCoefficients> circle_coefficients_of_all_clusters_test;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
-		   			circle_coefficients_of_all_clusters_test.resize(clusters.size());
-		   CircleExtraction(clusters, cloud, cloud_normals,circle_inliners_of_all_clusters_test,circle_coefficients_of_all_clusters_test);
+		   std::vector<pcl::PointIndices> circle_inliners_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
+		   			circle_inliners_of_all_clusters.resize(clusters.size());
+		   std::vector<pcl::ModelCoefficients> circle_coefficients_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
+		   			circle_coefficients_of_all_clusters.resize(clusters.size());
+		   CircleExtraction(clusters, cloud, cloud_normals,circle_inliners_of_all_clusters,circle_coefficients_of_all_clusters);
 
 
 		   /* grasp filtration
 		    * FiltrationAccToArea is called inside
 		    */
 		   GraspFiltration(
-				   cloud,circle_inliners_of_all_clusters_test,
-				   circle_coefficients_of_all_clusters_test);
+				   cloud,circle_inliners_of_all_clusters,
+				   circle_coefficients_of_all_clusters);
 		   
 		   /* grasp PostProcessing
 		    * GraspingVectorDirectionCorrection is called inside
 		    */
-		   PostProcessing(circle_inliners_of_all_clusters_test,
-				   circle_coefficients_of_all_clusters_test);
+		   PostProcessing(circle_inliners_of_all_clusters,
+				   circle_coefficients_of_all_clusters);
 		   //coodinate system calculation
-		   CoodinateSystemCalculation(circle_inliners_of_all_clusters_test,
-				   circle_coefficients_of_all_clusters_test,
+		   CoodinateSystemCalculation(circle_inliners_of_all_clusters,
+				   circle_coefficients_of_all_clusters,
 				   suction_grasp_hyp_list);
-
-			//circle extraction
-			PointCloud::Ptr cluster_cloud_complete(new PointCloud);// the segmented cloud after removing the points determined to not fall in a region
-			PointCloud::Ptr cluster_cloud_circle(new PointCloud);// contains the cloud where all detected circles are projected
-
-			pcl::PointCloud<pcl::Normal>::Ptr cluster_normals (new pcl::PointCloud<pcl::Normal>); // output data set for normals
-
-			pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> seg_cluster; // segmentor
-			pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud for each cluster
-			pcl::ExtractIndices<pcl::Normal> extract_sub_normals;// used to extract the normals for each cluster
-			pcl::ModelCoefficients::Ptr coefficients_circle (new pcl::ModelCoefficients); // the coefficients of the circle detected
-			pcl::PointIndices::Ptr inlineers_circle (new pcl::PointIndices);// the inliners of the point indices
-
-			std::vector<pcl::PointIndices> circle_inliners_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
-			circle_inliners_of_all_clusters.resize(clusters.size());
-			std::vector<pcl::ModelCoefficients> circle_coefficients_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
-			circle_coefficients_of_all_clusters.resize(clusters.size());
-
-			double min_detected_radius = min_detected_radius_;
-			double max_detected_radius = max_detected_radius_;
-			double angle_tollerance = angle_tollerance_; // [degrees] the tollerance for the circle detection from the given axis
-			double normal_distance_weight = normal_distance_weight_;
-			int max_number_of_iterations_circle_detection = max_number_of_iterations_circle_detection_;
-			double segmentation_distance_threshold = segmentation_distance_threshold_;
-			double area_consideration_ratio = area_consideration_ratio_;
-			//const boost::shared_ptr aPtr(clusters);
-
-
-			int number_of_clusters_without_circle =0;
-			for (int i =0; i < clusters.size(); i++) {
-				pcl::PointIndices::Ptr aPtr(new pcl::PointIndices(clusters[i]));
-
-				// extraction of the normals of a sub-cloud i.e. one region from the regions
-				extract_sub_normals.setInputCloud(cloud_normals);
-				extract_sub_normals.setIndices(aPtr);
-				extract_sub_normals.setNegative(false);
-				extract_sub_normals.filter (*cluster_normals);
-
-				// segmentation object for circle segmentation and set all the parameters
-				seg_cluster.setOptimizeCoefficients (true);
-				seg_cluster.setModelType (pcl::SACMODEL_CIRCLE3D);
-				seg_cluster.setMethodType (pcl::SAC_RANSAC);
-				seg_cluster.setNormalDistanceWeight (normal_distance_weight);
-				seg_cluster.setMaxIterations (max_number_of_iterations_circle_detection);
-				seg_cluster.setDistanceThreshold (segmentation_distance_threshold);// distance from model to be considerd an inliner
-				seg_cluster.setRadiusLimits (min_detected_radius, max_detected_radius);
-				Eigen::Vector3f Axis = cluster_normals->points[0].getNormalVector3fMap();
-				seg_cluster.setAxis(Axis);
-				seg_cluster.setEpsAngle(angle_tollerance/180*M_PI);
-				seg_cluster.setInputCloud (cloud);
-				seg_cluster.setInputNormals (cloud_normals);
-				seg_cluster.setIndices(aPtr);
-				seg_cluster.segment (*inlineers_circle, *coefficients_circle);
-
-				/*
-				 * filtration functions
-				 * */
-
-				// fitting a hull to the circle inliners by projecting the circle inliners onto a plane that is defined by the circle coefficients
-				PointCloud::Ptr temp_cloud(new PointCloud);// the segmented cloud after removing the points determined to not fall in a region
-				// defining the plane coefficients
-				pcl::ModelCoefficients::Ptr circle_to_cylinder_test (new pcl::ModelCoefficients);
-					circle_to_cylinder_test->values.push_back(coefficients_circle->values[4]);//a
-					circle_to_cylinder_test->values.push_back(coefficients_circle->values[5]);//b
-					circle_to_cylinder_test->values.push_back(coefficients_circle->values[6]);//c
-					circle_to_cylinder_test->values.push_back(sqrt((pow(coefficients_circle->values[0],2)+pow(coefficients_circle->values[1],2)+pow(coefficients_circle->values[2],2))));//d
-				// project the inliers to the plane
-				pcl::ProjectInliers<pcl::PointXYZ> proj;
-				proj.setModelType (pcl::SACMODEL_PLANE);// points are projected on a plane because circle 3d Does not have a model in project inliers
-				proj.setInputCloud (cloud);
-				proj.setModelCoefficients (circle_to_cylinder_test);
-				proj.setIndices (inlineers_circle);
-				proj.filter (*temp_cloud);
-//				plot_.plotCloud(temp_cloud, "inliers projected onto plane");
-				// fit the hull
-				std::vector<pcl::Vertices> hull_vertices;
-				pcl::ConvexHull<pcl::PointXYZ> hull3;
-				hull3.setInputCloud (temp_cloud);
-//				hull3.setIndices (inlineers_circle);
-				hull3.setComputeAreaVolume(true);
-				hull3.reconstruct(*temp_cloud,hull_vertices);//hull.getTotalArea(), hull.getDimension()
-				// check area condition and accordingly add or ignore the detected circle.
-				if(hull3.getTotalArea()>= M_PI*pow(min_detected_radius,2)*area_consideration_ratio)
-				{// area large enough consider
-					circle_inliners_of_all_clusters[i] = *inlineers_circle; // append the inliner indecies of the detected circle
-					circle_coefficients_of_all_clusters[i] = *coefficients_circle;
-				}
-
-				// post processing for proper result production
-				if (circle_inliners_of_all_clusters[i].indices.size() != 0) {
-					// checking the angle between the zaxis and the vector computed for the approach
-					Eigen::Vector3d Zaxis(0, 0, 1); // assuming a positive z axis from the camera to the scene
-					Eigen::Vector3d cylinder_vector(
-							// represents the approach vector
-							circle_coefficients_of_all_clusters[i].values[4],
-							circle_coefficients_of_all_clusters[i].values[5],
-							circle_coefficients_of_all_clusters[i].values[6]);
-					double dotproduct = Zaxis.dot(cylinder_vector); // it is the cos of the angel since both vectors are normalized there is no need to divide
-					if (dotproduct > 0) { // the vectors are between |-90 and 90 degrees| from each other then we reverse the direction
-						circle_coefficients_of_all_clusters[i].values[4] =
-								-circle_coefficients_of_all_clusters[i].values[4];
-						circle_coefficients_of_all_clusters[i].values[5] =
-								-circle_coefficients_of_all_clusters[i].values[5];
-						circle_coefficients_of_all_clusters[i].values[6] =
-								-circle_coefficients_of_all_clusters[i].values[6];
-					}
-
-					// creating a coordinate system using the vector obtained
-					Eigen::Vector3d direction_vectror_z(
-												circle_coefficients_of_all_clusters[i].values[4],
-												circle_coefficients_of_all_clusters[i].values[5],
-												circle_coefficients_of_all_clusters[i].values[6]);
-					Eigen::Vector3d direction_vectror_y(// this arrangement offers one of the perpendicular vectors on z (the approach vector)
-												-circle_coefficients_of_all_clusters[i].values[5],
-												circle_coefficients_of_all_clusters[i].values[4],
-												0);
-					Eigen::Vector3d direction_vectror_x = direction_vectror_y.cross(direction_vectror_z);
-
-					Eigen::Vector3d surface_point(
-							circle_coefficients_of_all_clusters[i].values[0],
-							circle_coefficients_of_all_clusters[i].values[1],
-							circle_coefficients_of_all_clusters[i].values[2]);
-					GraspHypothesis grasp(surface_point, direction_vectror_z,direction_vectror_y,direction_vectror_x);
-					suction_grasp_hyp_list.push_back(grasp);
-				} else {
-					number_of_clusters_without_circle++;
-				}
-			//std::cout<< "\n The circle has the following coefficients: \n" <<coefficients_circle->values;
-
-			}
-			double t_end_cirlce_extraction = omp_get_wtime();
-//			std::cout << "circle extraction done in " <<  t_end_cirlce_extraction -t_end_cirlce_clustering << " sec\n";
 
 			 // Stats
 			 double t_seg_end = omp_get_wtime();
 			 std::cout<<"************Stats************\n";
 			 std::cout<< "The number of clusters in the current cluster is : "<< clusters.size()<<"\n";
-			 std::cout<< "The number of clusters which have no circle is: "<< number_of_clusters_without_circle<<"\n";
+//			 std::cout<< "The number of clusters which have no circle is: "<< number_of_clusters_without_circle<<"\n";
 			 std::cout << "complete algorithm without  done in " << t_seg_end - t0 << " sec\n";
 
 			 /**
@@ -204,6 +72,9 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 			 bool print_string_data = false;
 			 if(plot_on_flag){
 				 double t_start_plot= omp_get_wtime();
+				 PointCloud::Ptr cluster_cloud_complete(new PointCloud);// the segmented cloud after removing the points determined to not fall in a region
+				 PointCloud::Ptr cluster_cloud_circle(new PointCloud);// contains the cloud where all detected circles are projected
+				 pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud for each cluster
 			 // Preprocessing for plotting
 			 pcl::PointIndices concatinated_circle_inliners;
 			 pcl::PointIndices concatinated_clusters;
@@ -377,6 +248,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 
 
 //	plot_.plotHands(suction_grasp_hyp_list, cloud_plot, "");// the function createNormalsCloud has been modified to reverse the directions of the normlals being ploted
+	cin.get();
 	return suction_grasp_hyp_list;
 }
 
@@ -757,7 +629,6 @@ PointCloud::Ptr Localization::PointCloudPreProcessing(const PointCloud::Ptr& clo
 	else
 		pts_cam_source << Eigen::VectorXi::Zero(size_left), Eigen::VectorXi::Ones(
 				cloud_in->size() - size_left);
-	std::cout << "before NAN removal" << " ...\n";
 	// remove NAN points from the cloud
 	std::vector<int> nan_indices;
 	pcl::removeNaNFromPointCloud(*cloud_in, *cloud_in, nan_indices);
