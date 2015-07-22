@@ -179,7 +179,6 @@ void GraspLocalizer::findSuctionGrasps()
   int loop_counter = 0;
   while (ros::ok())
   {
-	  std::cout << "the current iterations is: "<<loop_counter<<"\n";
     // wait for point clouds to arrive
     if (num_clouds_received_ == num_clouds_)
     {
@@ -210,11 +209,17 @@ void GraspLocalizer::findSuctionGrasps()
 
       // reset
       num_clouds_received_ = 0;
+      loop_counter++;
+    }
+    else
+    {
+			std::cout << "Number of clouds recived is no sufficent" << "\n"
+					<< "recieved: " << num_clouds_received_ << " requierd: "
+					<< num_clouds_ << "\n";
     }
 
     ros::spinOnce();
     rate.sleep();
-    loop_counter++;
   }
 }
 //

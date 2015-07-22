@@ -203,6 +203,84 @@ public:
 	}
 	
 	/**
+	* \brief calculate the normals of the entier pointcloud or the subcloud defined by the indiceis
+	* \param cloud_in the input cloud
+	* \param the KD tree
+	* \param radius used to calculate the normals
+	* \param the Pointer to the memory address where the output will go
+	*/
+	void CalculateNormalsForPointCloud(
+			PointCloud::Ptr& cloud_in,
+			pcl::search::KdTree<pcl::PointXYZ>::Ptr& tree,
+			double normal_radius_search,
+			pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals);
+
+	/**
+	* \brief calculate the normals of the subcloud defined by the indiceis
+	*
+	* \param cloud_in the input cloud
+	* \param the KD tree
+	* \param radius used to calculate the normals
+	* \param the Pointer to the memory address where the output will go
+	*/
+	void CalculateNormalsForPointCloud(
+			PointCloud::Ptr& cloud_in,
+			pcl::search::KdTree<pcl::PointXYZ>::Ptr& tree,
+			double normal_radius_search,
+			pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals,
+			pcl::PointIndices::Ptr& indiceis);
+
+	/**
+	* \brief calculate the normals of the subcloud defined by the indiceis
+	*
+	* \param cloud_in the input cloud
+	* \param the KD tree
+	* \param radius used to calculate the normals
+	* \param the Pointer to the memory address where the output will go
+	*/
+	std::vector <pcl::PointIndices> ClusterUsingRegionGrowing(
+			const PointCloud::Ptr& cloud_in,
+			const pcl::search::KdTree<pcl::PointXYZ>::Ptr& tree,
+			const double normal_radius_search,
+			const pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals,
+			const double angle_threshold_between_normals,
+			const double curvature_threshold,
+			const int num_of_kdTree_neighbours,
+			const int min_size_of_cluster_allowed,
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr& segmented_colored_pc,
+			const int max_size_of_cluster_allowed = 1000000);
+
+	void CircleExtraction(
+			std::vector <pcl::PointIndices>& clusters,
+			PointCloud::Ptr& cloud,
+			pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals,
+			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
+			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
+
+	void GraspFiltration(const PointCloud::Ptr& cloud,
+			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
+			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
+			double min_detected_radius = 0,
+			double area_consideration_ratio = 0);
+
+	void FiltrationAccToArea(const PointCloud::Ptr& cloud,
+			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
+			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
+			double min_detected_radius = 0,
+			double area_consideration_ratio = 0);
+
+	void PostProcessing(std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
+			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
+
+	void GraspingVectorDirectionCorrection(const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
+			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
+
+	void CoodinateSystemCalculation(const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
+			const std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
+			std::vector<GraspHypothesis>& suction_grasp_hyp_list);
+
+
+	/**
 	 * \brief Set the dimensions of the robot's workspace.
 	 * \param workspace 1x6 vector containing the robot's workspace dimensions
 	*/
@@ -399,7 +477,6 @@ private:
 			const PointCloud::Ptr& cloud_in, PointCloud::Ptr& cloud_plot,
 			int size_left, bool uses_clustering);
 
-	
 	/**
 	 * \brief Filter out points in the point cloud that lie outside the workspace dimensions and keep 
 	 * track of the camera source for each point that is not filtered out.
@@ -417,7 +494,7 @@ private:
 	 * \return the list of grasp hypotheses that are not filtered out
 	*/
 	std::vector<GraspHypothesis> filterHands(const std::vector<GraspHypothesis>& hand_list);
-	
+
 	/**
 	 * \brief Round a 3D-vector down to the closest, smaller integers.
 	 * \param a the 3D-vector to be rounded down
@@ -479,5 +556,9 @@ private:
 	static const int PCL_PLOTTING = 1; ///< plotting in PCL
 	static const int RVIZ_PLOTTING = 2; ///< plotting in Rviz
 };
+
+
+
+
 
 #endif
