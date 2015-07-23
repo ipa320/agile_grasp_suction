@@ -248,7 +248,19 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 
 
 //	plot_.plotHands(suction_grasp_hyp_list, cloud_plot, "");// the function createNormalsCloud has been modified to reverse the directions of the normlals being ploted
-	cin.get();
+//	PointCloud::Ptr selected_points_pc(new PointCloud);
+//	if(first_plot_){
+//	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> selected_points_color (selected_points_pc, 0, 150, 200);
+//	viewer_comb_->addPointCloud(selected_points_pc,selected_points_color,"selected_points",viewer_point_indicies_[3]);
+//	}
+//	struct callback_args cb_args;
+//	cb_args.clicked_points_cloud = selected_points_pc;
+//	cb_args.viewerPtr = viewer_comb_;
+//	pcl::visualization::PCLVisualizer viewerr("PCL Viewer");
+//	viewerr.registerPointPickingCallback (pp_callback, (void*)&cb_args);
+//	viewer_comb_->registerPointPickingCallback(PointPickCallback,(void*)&cb_args);
+	viewer_comb_->spin();
+
 	return suction_grasp_hyp_list;
 }
 
@@ -607,7 +619,43 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 }
 
 
+//void Localization::PointPickCallback (const pcl::visualization::PointPickingEvent& event, void* args)
+//{
+//  struct callback_args* data = (struct callback_args *)args;
+//  if (event.getPointIndex () == -1)
+//  {
+//	std::cout<<"Bad Point Index \n";
+//    return;
+//  }
+//  pcl::PointXYZ current_point;
+//  event.getPoint(current_point.x, current_point.y, current_point.z);
+//  if(data->clicked_points_cloud->points.size()>=6)
+//	  data->clicked_points_cloud->points.resize(0);
+//  data->clicked_points_cloud->points.push_back(current_point);
+//  // Draw clicked points in red:
+////  pcl::visualization::PointCloudColorHandlerCustom<PointT> red (data->clicked_points_3d, 255, 0, 0);
+////  data->viewerPtr->removePointCloud("clicked_points");
+////  data->viewerPtr->addPointCloud(data->clicked_points_3d, red, "clicked_points");
+//  viewer_comb_->updatePointCloud(data->clicked_points_cloud,"selected_points");
+//  viewer_comb_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "selected_points");
+//  std::cout <<"Coordinates of selected point are: \n"<< "x: "<<current_point.x << "y: " << current_point.y << "z: " << current_point.z << std::endl;
+//}
 
+//void Localization::pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
+//{
+////  struct callback_args* data = (struct callback_args *)args;
+//  if (event.getPointIndex () == -1)
+//    return;
+//  pcl::PointXYZ current_point;
+//  event.getPoint(current_point.x, current_point.y, current_point.z);
+////  data->clicked_points_cloud->points.push_back(current_point);
+////  // Draw clicked points in red:
+////  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red (data->clicked_points_cloud, 255, 0, 0);
+////  data->viewerPtr->removePointCloud("clicked_points");
+////  data->viewerPtr->addPointCloud(data->clicked_points_cloud, red, "clicked_points");
+////  data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
+//  std::cout << current_point.x << " " << current_point.y << " " << current_point.z << std::endl;
+//}
 
 
 PointCloud::Ptr Localization::PointCloudPreProcessing(const PointCloud::Ptr& cloud_in, PointCloud::Ptr& cloud_plot,	int size_left, bool uses_clustering)

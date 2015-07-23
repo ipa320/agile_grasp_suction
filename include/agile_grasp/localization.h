@@ -83,6 +83,11 @@ typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 class Localization
 {
 public:
+	struct callback_args{
+	  // structure used to pass arguments to the callback function
+	  PointCloud::Ptr clicked_points_cloud;
+	  pcl::visualization::PCLVisualizer::Ptr viewerPtr;
+	};
 
 	/**
 	 * \brief Default Constructor.
@@ -279,7 +284,9 @@ public:
 			const std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			std::vector<GraspHypothesis>& suction_grasp_hyp_list);
 
+//	void PointPickCallback(const pcl::visualization::PointPickingEvent& event, void* args);
 
+//	void pp_callback (const pcl::visualization::PointPickingEvent& event, void* args);
 	/**
 	 * \brief Set the dimensions of the robot's workspace.
 	 * \param workspace 1x6 vector containing the robot's workspace dimensions
