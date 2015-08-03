@@ -56,6 +56,7 @@
 #include <agile_grasp/SuctionGrasps.h>
 #include <tf/transform_broadcaster.h>
 
+
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
 /** GraspLocalizer class
@@ -178,6 +179,8 @@ public:
    * \brief Repeatedly localize suction grasps in the input point cloud.
   */
   void findSuctionGrasps();
+
+//  std::vector QuaternionFromRotationalMatrix(const Eigen::MatrixX4d& RotationalMatrix);
 
 private:
 	

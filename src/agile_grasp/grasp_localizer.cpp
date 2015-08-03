@@ -15,7 +15,7 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
 
   // create ROS publisher for grasps
   grasps_pub_ = node.advertise<agile_grasp::SuctionGrasps>("grasps", 10);
-
+//  ros::Publisher grasps_pub_pose_stamped_msg = node.advertise<geometry_msgs::PoseStamped>("grasps_pose_stamped", 10);
   // create localization object and initialize its parameters
   localization_ = new Localization(params.num_threads_, true, params.plotting_mode_);
   //  localization_->setCameraTransforms(params.cam_tf_left_, params.cam_tf_right_);
@@ -285,6 +285,23 @@ agile_grasp::SuctionGrasp GraspLocalizer::createSuctionGraspMsg(const GraspHypot
   tf::vectorEigenToMsg(hand.getBinormal(), msg.vector_y);
   return msg;
 }
+
+//std::vector GraspLocalizer::QuaternionFromRotationalMatrix(const Eigen::MatrixX4d& RM)
+//{
+//	Eigen::Vector4f Quaternions(4);
+////	((x > 0) - (x < 0)) this corresponds to the sign operator
+//
+//	double x_sig,y_sig,z_sig;
+//	x_sig = RM(3,2)-RM(2,3);
+//	y_sig = RM(1,3)-RM(3,1);
+//	z_sig = RM(2,1)-RM(1,2);
+//	Quaternions[0] = 0.5*(((x_sig > 0) - (x_sig < 0))*sqrt(RM(1,1)-RM(2,2)-RM(3,3)+1));//x
+//	Quaternions[1] = 0.5*(((y_sig > 0) - (y_sig < 0))sqrt());//y
+//	Quaternions[2] = 0.5*(((z_sig > 0) - (z_sig < 0))sqrt());//z
+//	Quaternions[3] = 0.5*sqrt(pow((double)RM(1,1),2)+
+//			pow((double)RM(2,2),2)+
+//			pow((double)RM(3,3),2));//w
+//}
 
 
 agile_grasp::Grasps GraspLocalizer::createGraspsMsgFromHands(const std::vector<Handle>& handles)
