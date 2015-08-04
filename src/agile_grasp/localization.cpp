@@ -70,6 +70,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 			  */
 
 			 bool print_string_data = false;
+			 bool plot_coordinate_systems_for_grasps = false;
 			 if(plot_on_flag){
 				 double t_start_plot= omp_get_wtime();
 				 PointCloud::Ptr cluster_cloud_complete(new PointCloud);// the segmented cloud after removing the points determined to not fall in a region
@@ -106,6 +107,8 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 			 // plots
 			 if(first_plot_){
 			 viewer_comb_->removeAllShapes();
+			 viewer_comb_->removeCoordinateSystem();
+			 viewer_comb_-> removeAllPointClouds();
 //			 boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb (new pcl::visualization::PCLVisualizer ("Algorithim output"));
 			 // common comands
 			 viewer_comb_->initCameraParameters ();
@@ -173,6 +176,20 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 			 					 std::cout<< "vector z: "<<circle_coefficients_of_all_clusters[i].values[6]<<"\n";
 			 					 std::cout<<"************************\n";
 			 					 }
+			 					 /*
+			 					  * add coordinate systems for each grasp...
+			 					  * Problem coordinate systems cannot all be removed, code bug
+			 					  */
+			 					 if(plot_coordinate_systems_for_grasps){
+			 					 Eigen:: Matrix3d xx;
+			 					 xx << suction_grasp_hyp_list[i].getAxis(),suction_grasp_hyp_list[i].getBinormal(),suction_grasp_hyp_list[i].getApproach();
+			 					 Eigen::Affine3d rot(xx);
+			 					 Eigen::Affine3d transl(Eigen::Translation3d(suction_grasp_hyp_list[i].getGraspSurface()));
+			 					Eigen::Affine3d combined = transl * rot;//Concatenates a translation and a linear transformation
+			 					Eigen::Affine3f combined_f = static_cast<Eigen::Affine3f>(combined);
+			 					viewer_comb_->addCoordinateSystem(0.01, combined_f, viewer_point_indicies_[3]);
+			 					 }
+
 //			 					Eigen::Vector3d surface_grasp_point = suction_grasp_hyp_list[i].getGraspSurface();
 //			 					Eigen::Vector3d end_point_xaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getAxis();
 //			 					Eigen::Vector3d end_point_yaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getBinormal();
@@ -182,6 +199,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 //			 					start_point.x = surface_grasp_point[0];start_point.y = surface_grasp_point[1];start_point.z = surface_grasp_point[2];
 //			 					pcl::PointXYZ end_point_x;
 //			 					end_point_x.x = end_point_xaixs[0];end_point_x.y = end_point_xaixs[1];end_point_x.z = end_point_xaixs[2];
+//
 //			 					viewer_comb_->addArrow(start_point,end_point_x,1.0,1.0,1.0,true,"arrow_x"+i,viewer_point_indicies_[3]);
 //			 					pcl::PointXYZ end_point_y;
 //			 					end_point_y.x = end_point_yaixs[0];end_point_y.y = end_point_yaixs[1];end_point_y.z = end_point_yaixs[2];
@@ -843,18 +861,15 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 		
 		pcl::ModelCoefficients::Ptr circle_coef_to_plane(
 				new pcl::ModelCoefficients);
-		circle_coef_to_plane->values.push_back(
-				circle_coefficients_current.values[4]); //a
-		circle_coef_to_plane->values.push_back(
-				circle_coefficients_current.values[5]); //b
-		circle_coef_to_plane->values.push_back(
-				circle_coefficients_current.values[6]); //c
 		a = circle_coefficients_current.values[4];
 		b = circle_coefficients_current.values[5];
 		c = circle_coefficients_current.values[6];
 		x0 = circle_coefficients_current.values[0];
 		y0 = circle_coefficients_current.values[1];
 		z0 = circle_coefficients_current.values[2];
+		circle_coef_to_plane->values.push_back(a); //a
+		circle_coef_to_plane->values.push_back(b); //b
+		circle_coef_to_plane->values.push_back(c); //c
 		d = (-a*x0-b*y0-c*z0);
 		circle_coef_to_plane->values.push_back(d); //d
 		// project the inliers to the plane
@@ -916,6 +931,7 @@ void Localization::GraspingVectorDirectionCorrection(
 				circle_coefficients_of_all_clusters[i].values[6] =
 						-circle_coefficients_of_all_clusters[i].values[6];
 			}
+
 		}
 	}
 }
@@ -933,12 +949,15 @@ void Localization::CoodinateSystemCalculation(
 					circle_coefficients_of_all_clusters[i].values[6]);
 			Eigen::Vector3d direction_vectror_y(
 					// this arrangement offers one of the perpendicular vectors on z (the approach vector)
-					-circle_coefficients_of_all_clusters[i].values[5],
-					circle_coefficients_of_all_clusters[i].values[4], 0);
+					0,
+					-circle_coefficients_of_all_clusters[i].values[6],
+					circle_coefficients_of_all_clusters[i].values[5]);
 			Eigen::Vector3d direction_vectror_x = direction_vectror_y.cross(
 					direction_vectror_z);
-
-			Eigen::Vector3d surface_point(
+//std::cout<<"the norms are: x: "<<direction_vectror_x.norm()<<" y: "<<direction_vectror_y.norm()<<" z: "<<direction_vectror_z.norm()<<"\n";
+direction_vectror_x.normalize();direction_vectror_y.normalize();direction_vectror_z.normalize();
+//std::cout<<"the norms are: x: "<<direction_vectror_x.norm()<<" y: "<<direction_vectror_y.norm()<<" z: "<<direction_vectror_z.norm()<<"\n";
+Eigen::Vector3d surface_point(
 					circle_coefficients_of_all_clusters[i].values[0],
 					circle_coefficients_of_all_clusters[i].values[1],
 					circle_coefficients_of_all_clusters[i].values[2]);
@@ -1002,6 +1021,7 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 		if (inlineers_circle->indices.size() != 0) {
 			circle_inliners_of_all_clusters[i] = *inlineers_circle; // append the inliner indecies of the detected circle
 			circle_coefficients_of_all_clusters[i] = *coefficients_circle;
+//			std::cout<<"the magnitueds of the vector is: "<<sqrt(pow(circle_coefficients_of_all_clusters[i].values[4],2)+pow(circle_coefficients_of_all_clusters[i].values[5],2)+pow(circle_coefficients_of_all_clusters[i].values[6],2))<<"\n";
 		} else {
 			number_of_clusters_without_circle++;
 		}

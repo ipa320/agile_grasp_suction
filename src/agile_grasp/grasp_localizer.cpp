@@ -14,8 +14,7 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
 		cloud_sub_ = node.subscribe(cloud_topic, 1, &GraspLocalizer::cloud_callback, this);
 
   // create ROS publisher for grasps
-  grasps_pub_ = node.advertise<agile_grasp::SuctionGrasps>("grasps", 10);
-//  ros::Publisher grasps_pub_pose_stamped_msg = node.advertise<geometry_msgs::PoseStamped>("grasps_pose_stamped", 10);
+  grasps_pub_ = node.advertise<geometry_msgs::PoseArray>("grasps", 10);
   // create localization object and initialize its parameters
   localization_ = new Localization(params.num_threads_, true, params.plotting_mode_);
   //  localization_->setCameraTransforms(params.cam_tf_left_, params.cam_tf_right_);
@@ -103,8 +102,9 @@ void GraspLocalizer::cloud_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
 			<< std::endl;
     std::exit(EXIT_FAILURE);
   }
-  if (num_clouds_received_ == 0)
+  if (num_clouds_received_ == 0){
     pcl::fromROSMsg(*msg, *cloud_left_);
+  message_stamp_ = msg->header.stamp;}
   else if (num_clouds_received_ == 1)
     pcl::fromROSMsg(*msg, *cloud_right_);
   std::cout << "Received cloud # " << num_clouds_received_ << " with " << msg->height * msg->width << " points\n";
@@ -262,28 +262,52 @@ agile_grasp::Grasp GraspLocalizer::createGraspMsg(const GraspHypothesis& hand)
   return msg;
 }
 
-agile_grasp::SuctionGrasps GraspLocalizer::createSuctionGraspsMsg(const std::vector<GraspHypothesis>& hands)
+geometry_msgs::PoseArray GraspLocalizer::createSuctionGraspsMsg(const std::vector<GraspHypothesis>& hands)
 {
-  agile_grasp::SuctionGrasps msg;
+	geometry_msgs::PoseArray msg;
 
   for (int i = 0; i < hands.size(); i++)
 	{
-  	msg.grasps.push_back(createSuctionGraspMsg(hands[i]));
+  	msg.poses.push_back(createSuctionGraspMsg(hands[i]));
   }
-
   msg.header.stamp = ros::Time::now();
   return msg;
 }
 
 
-agile_grasp::SuctionGrasp GraspLocalizer::createSuctionGraspMsg(const GraspHypothesis& hand)
+geometry_msgs::Pose GraspLocalizer::createSuctionGraspMsg(const GraspHypothesis& hand)
 {
-  agile_grasp::SuctionGrasp msg;
-  tf::vectorEigenToMsg(hand.getGraspSurface(), msg.Point);
-  tf::vectorEigenToMsg(hand.getApproach(), msg.Approach_vector);
-  tf::vectorEigenToMsg(hand.getAxis(), msg.vector_x);
-  tf::vectorEigenToMsg(hand.getBinormal(), msg.vector_y);
-  return msg;
+  geometry_msgs::Pose pose_msg;
+  Eigen::Matrix3d rot;
+//  std::cout<< "The matrix is: xv: "<<hand.getAxis()<< " yv: "<<hand.getBinormal()<< " zv: "<<hand.getApproach()<<"\n";
+  rot<< hand.getAxis(),hand.getBinormal(),hand.getApproach();
+  Eigen::Quaterniond q(rot);
+  std::cout<< "The original matrix is: \n"<<rot<< "\n";
+  q.normalize();
+  std::cout<< "The back converted matrix is: \n"<<q.toRotationMatrix()<< "\n";
+//  std::cout<< "The coeff are: "<<q.coeffs() <<"\n";
+  std::cout<< "The coeff are: w: "<<q.w()<<	 " x: "<<q.x()<< " y: "<<q.y()<< " z: "<<q.z()<<"\n";
+//  std::cout<< "The back converted matrix is: \n"<<q.matrix()<< "\n";
+  Eigen::Quaterniond q2(q.toRotationMatrix());
+  std::cout<< "The coeff are: w: "<<q2.w()<< " x: "<<q2.x()<< " y: "<<q2.y()<< " z: "<<q2.z()<<"\n";
+  std::cout<<"multiplying the rot with its own inverse: \n"<<rot*rot.inverse()<<"\n";
+  std::cout<<"multiplying the rot with its quaternion inverse: \n"<<q.toRotationMatrix()*rot.inverse()<<"\n";
+
+
+  double mag = pow(q.w(),2)+pow(q.x(),2)+pow(q.y(),2)+pow(q.z(),2);
+  if(mag!=1)
+  {
+	  std::cout<<"There is a bad Quaternion: "<<mag<<" \n";
+  }
+  tf::quaternionEigenToMsg(q,pose_msg.orientation);
+  tf::pointEigenToMsg(hand.getGraspSurface(), pose_msg.position);
+//  tf::EigenToMsg(position, pose_msg.position);
+//  tf::vectorEigenToMsg(q, pose_msg.orientation);
+//  tf::vectorEigenToMsg(hand.getGraspSurface(), msg.Point);
+//  tf::vectorEigenToMsg(hand.getApproach(), msg.Approach_vector);
+//  tf::vectorEigenToMsg(hand.getAxis(), msg.vector_x);
+//  tf::vectorEigenToMsg(hand.getBinormal(), msg.vector_y);
+  return pose_msg;
 }
 
 //std::vector GraspLocalizer::QuaternionFromRotationalMatrix(const Eigen::MatrixX4d& RM)
@@ -325,10 +349,11 @@ agile_grasp::Grasps GraspLocalizer::createGraspsMsgFromHands(const std::vector<H
 
 agile_grasp::Grasps GraspLocalizer::createGraspsMsg(const std::vector<Handle>& handles)
 {
-  agile_grasp::Grasps msg;  
+  agile_grasp::Grasps msg;
   for (int i = 0; i < handles.size(); i++)
-    msg.grasps.push_back(createGraspMsg(handles[i]));  
+    msg.grasps.push_back(createGraspMsg(handles[i]));
   msg.header.stamp = ros::Time::now();
+  msg.header.stamp = message_stamp_;
   std::cout << "Created grasps msg containing " << msg.grasps.size() << " handles\n";
   return msg;
 }

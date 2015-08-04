@@ -36,6 +36,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <geometry_msgs/PoseArray.h>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -55,6 +56,7 @@
 #include <agile_grasp/SuctionGrasp.h>
 #include <agile_grasp/SuctionGrasps.h>
 #include <tf/transform_broadcaster.h>
+#include "tf/transform_datatypes.h"
 
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
@@ -232,13 +234,13 @@ private:
  	 * \brief Create a grasp message from a list of grasp hypotheses.
  	 * \param hands the set of grasp hypotheses from which the grasps message is created
  	*/
-   agile_grasp::SuctionGrasps createSuctionGraspsMsg(const std::vector<GraspHypothesis>& hands);
+  geometry_msgs::PoseArray createSuctionGraspsMsg(const std::vector<GraspHypothesis>& hands);
 
    /**
  	 * \brief Create a grasp message from a grasp hypothesis.
  	 * \param hand the grasp hypothesis from which the grasp message is created
  	*/
-   agile_grasp::SuctionGrasp createSuctionGraspMsg(const GraspHypothesis& hand);
+  geometry_msgs::Pose createSuctionGraspMsg(const GraspHypothesis& hand);
    /**
 	 *\breif a function used to broadcast the frames corresponding to the grasps to the tf tree
 	 */
@@ -263,6 +265,7 @@ private:
   /** constants for input point cloud types */
 	static const int POINT_CLOUD_2 = 0; ///< sensor_msgs/PointCloud2
 	static const int CLOUD_SIZED = 1; ///< agile_grasp/CloudSized
+	ros::Time message_stamp_;
 };
 
 #endif /* GRASP_LOCALIZER_H_ */
