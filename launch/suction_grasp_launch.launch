@@ -8,8 +8,8 @@
     <param name="num_clouds" value="1" />
     
     <param name="min_inliers" value="10" />
-    <param name="plotting" value="1" />
-    <param name="marker_lifetime" value="5" />
+    <param name="plotting" value="2" />
+    <param name="marker_lifetime" value="20.0" />
     
 
     
@@ -30,7 +30,6 @@
 	<param name="max_number_of_iterations_circle_detection" value="1000" />
 	<param name="segmentation_distance_threshold" value="0.004" />
 			
-	<param name="marker_lifetime" value="5" />
 	<rosparam param="workspace"> [-0.35, 0.28,-0.15, 0.23, -10, 10] </rosparam>
     <rosparam param="camera_pose"> [0, 0.445417, 0.895323, 0.215, 
               1, 0, 0, -0.015, 

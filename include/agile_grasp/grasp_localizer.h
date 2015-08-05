@@ -266,6 +266,7 @@ private:
 	static const int POINT_CLOUD_2 = 0; ///< sensor_msgs/PointCloud2
 	static const int CLOUD_SIZED = 1; ///< agile_grasp/CloudSized
 	ros::Time message_stamp_;
+	std::string message_frame_id_;
 };
 
 #endif /* GRASP_LOCALIZER_H_ */

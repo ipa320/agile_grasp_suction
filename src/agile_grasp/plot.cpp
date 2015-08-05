@@ -255,7 +255,7 @@ void Plot::plotGraspsRviz(const std::vector<GraspHypothesis>& hand_list, const s
     position.x = hand_list[i].getGraspSurface()(0);
     position.y = hand_list[i].getGraspSurface()(1);
     position.z = hand_list[i].getGraspSurface()(2);
-    visualization_msgs::Marker marker = createApproachMarker(frame, position, hand_list[i].getApproach(), i, color, 0.4, 
+    visualization_msgs::Marker marker = createApproachMarker(frame, position, -hand_list[i].getApproach(), i, color, 0.4,
 			0.004);
 		marker.ns = "grasp_hypotheses";
 		marker.id = i;
@@ -400,7 +400,7 @@ visualization_msgs::Marker Plot::createApproachMarker(const std::string& frame, 
   marker.id = id;
   marker.scale.x = diam; // shaft diameter
   marker.scale.y = diam; // head diameter
-  marker.scale.z = 0.01; // head length
+  marker.scale.z = 0.02; // head length
   marker.color.r = color[0];
   marker.color.g = color[1];
   marker.color.b = color[2];

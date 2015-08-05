@@ -285,8 +285,7 @@ public:
 			std::vector<GraspHypothesis>& suction_grasp_hyp_list);
 
 //	void PointPickCallback(const pcl::visualization::PointPickingEvent& event, void* args);
-
-//	void pp_callback (const pcl::visualization::PointPickingEvent& event, void* args);
+	void pp_callback (const pcl::visualization::PointPickingEvent& event, void* args);
 	/**
 	 * \brief Set the dimensions of the robot's workspace.
 	 * \param workspace 1x6 vector containing the robot's workspace dimensions
@@ -563,6 +562,7 @@ private:
 	static const int PCL_PLOTTING = 1; ///< plotting in PCL
 	static const int RVIZ_PLOTTING = 2; ///< plotting in Rviz
 };
+
 
 
 
