@@ -117,6 +117,7 @@ public:
 		 viewer_comb_->createViewPort (0.5, 0.5, 1.0, 1.0, viewer_point_indicies_[1]);
 		 viewer_comb_->createViewPort (0.0, 0.0, 0.5, 0.5, viewer_point_indicies_[2]);
 		 viewer_comb_->createViewPort (0.5, 0.0, 1.0, 0.5, viewer_point_indicies_[3]);
+		 viewer_comb_->close();
 	}
 	
 	/**
@@ -284,7 +285,10 @@ public:
 			const std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			std::vector<GraspHypothesis>& suction_grasp_hyp_list);
 
-//	void PointPickCallback(const pcl::visualization::PointPickingEvent& event, void* args);
+	void visualize();
+	void plot_thread_start();
+	void plot_thread_join();
+
 	void pp_callback (const pcl::visualization::PointPickingEvent& event, void* args);
 	/**
 	 * \brief Set the dimensions of the robot's workspace.
@@ -554,8 +558,10 @@ private:
 	int plotting_mode_; ///< what plotting mode is used
 	std::string visuals_frame_; ///< visualization frame for Rviz
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb_;// plotting object used for multiple cloud visualization
-	std::vector<int> viewer_point_indicies_;
-	bool first_plot_;
+	std::vector<int> viewer_point_indicies_;// the indices used to define the view ports for the viewer
+	bool first_plot_;// a flag to check if this is the first plot execution
+	boost::thread ploter_thread_;// a thread used for the plotting object
+	boost::mutex updateModelMutex;// mutex used to protect the plotting thread from racing
 
 	/** constants for plotting modes */
 	static const int NO_PLOTTING = 0; ///< no plotting

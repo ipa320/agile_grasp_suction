@@ -5,7 +5,7 @@ project(agile_grasp)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS cmake_modules cv_bridge eigen_conversions geometry_msgs 
-message_generation pcl_conversions roscpp sensor_msgs std_msgs visualization_msgs)
+message_generation pcl_conversions roscpp sensor_msgs std_msgs visualization_msgs cob_perception_msgs)
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen REQUIRED)
@@ -50,7 +50,7 @@ set(CMAKE_CXX_FLAGS "-DNDEBUG -O3 -fopenmp -Wno-deprecated -Wenum-compare")
 add_message_files(FILES CloudSized.msg Grasp.msg Grasps.msg SuctionGrasp.msg SuctionGrasps.msg)
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs)
+generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs cob_perception_msgs)
 
 ###################################
 ## catkin specific configuration ##

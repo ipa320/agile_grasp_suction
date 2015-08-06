@@ -37,6 +37,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseArray.h>
+#include <cob_perception_msgs/DetectionArray.h>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -241,6 +242,8 @@ private:
  	 * \param hand the grasp hypothesis from which the grasp message is created
  	*/
   geometry_msgs::Pose createSuctionGraspMsg(const GraspHypothesis& hand);
+
+  cob_perception_msgs::DetectionArray createDetectionArraySuctionMsgs(const std::vector<GraspHypothesis>& hands);
    /**
 	 *\breif a function used to broadcast the frames corresponding to the grasps to the tf tree
 	 */
@@ -252,6 +255,7 @@ private:
   PointCloud::Ptr cloud_left_, cloud_right_; ///< the point clouds
   ros::Subscriber cloud_sub_; ///< the subscriber for the point cloud topic
   ros::Publisher grasps_pub_; ///< the publisher for the antipodal grasps
+  ros::Publisher grasps_pub_bba_; ///< the publisher for the antipodal grasps using bounding box array
   Localization* localization_; ///< a pointer to a localization object
   std::vector<GraspHypothesis> hands_; ///< the grasp hypotheses found by the hand search
   std::vector<GraspHypothesis> antipodal_hands_; ///< the antipodal grasps predicted by the SVM

@@ -15,6 +15,7 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
 
   // create ROS publisher for grasps
   grasps_pub_ = node.advertise<geometry_msgs::PoseArray>("grasps", 10);
+  grasps_pub_bba_ = node.advertise<cob_perception_msgs::DetectionArray>("bounding_box_array", 10);
   // create localization object and initialize its parameters
   localization_ = new Localization(params.num_threads_, true, params.plotting_mode_);
   //  localization_->setCameraTransforms(params.cam_tf_left_, params.cam_tf_right_);
@@ -202,7 +203,7 @@ void GraspLocalizer::findSuctionGrasps()
 
       // publish handles
       grasps_pub_.publish(createSuctionGraspsMsg(hands_));
-
+      grasps_pub_bba_.publish(createDetectionArraySuctionMsgs(hands_));
       ros::Duration(1.0).sleep();
 
 //      // publish hands contained in handles
@@ -283,54 +284,31 @@ geometry_msgs::Pose GraspLocalizer::createSuctionGraspMsg(const GraspHypothesis&
 {
   geometry_msgs::Pose pose_msg;
   Eigen::Matrix3d rot;
-//  std::cout<< "The matrix is: xv: "<<hand.getAxis()<< " yv: "<<hand.getBinormal()<< " zv: "<<hand.getApproach()<<"\n";
   rot<< hand.getAxis(),hand.getBinormal(),hand.getApproach();
   Eigen::Quaterniond q(rot);
   q.normalize();
-//  std::cout<< "The original matrix is: \n"<<rot<< "\n";
-//  std::cout<< "The back converted matrix is: \n"<<q.toRotationMatrix()<< "\n";
-////  std::cout<< "The coeff are: "<<q.coeffs() <<"\n";
-//  std::cout<< "The coeff are: w: "<<q.w()<<	 " x: "<<q.x()<< " y: "<<q.y()<< " z: "<<q.z()<<"\n";
-////  std::cout<< "The back converted matrix is: \n"<<q.matrix()<< "\n";
-//  Eigen::Quaterniond q2(q.toRotationMatrix());
-//  std::cout<< "The coeff are: w: "<<q2.w()<< " x: "<<q2.x()<< " y: "<<q2.y()<< " z: "<<q2.z()<<"\n";
-//  std::cout<<"multiplying the rot with its own inverse: \n"<<rot*rot.inverse()<<"\n";
-//  std::cout<<"multiplying the rot with its quaternion inverse: \n"<<q.toRotationMatrix()*rot.inverse()<<"\n";
-
-
-//  double mag = pow(q.w(),2)+pow(q.x(),2)+pow(q.y(),2)+pow(q.z(),2);
-//  if(mag!=1)
-//  {
-//	  std::cout<<"There is a bad Quaternion: "<<mag<<" \n";
-//  }
   tf::quaternionEigenToMsg(q,pose_msg.orientation);
   tf::pointEigenToMsg(hand.getGraspSurface(), pose_msg.position);
-//  tf::EigenToMsg(position, pose_msg.position);
-//  tf::vectorEigenToMsg(q, pose_msg.orientation);
-//  tf::vectorEigenToMsg(hand.getGraspSurface(), msg.Point);
-//  tf::vectorEigenToMsg(hand.getApproach(), msg.Approach_vector);
-//  tf::vectorEigenToMsg(hand.getAxis(), msg.vector_x);
-//  tf::vectorEigenToMsg(hand.getBinormal(), msg.vector_y);
   return pose_msg;
 }
 
-//std::vector GraspLocalizer::QuaternionFromRotationalMatrix(const Eigen::MatrixX4d& RM)
-//{
-//	Eigen::Vector4f Quaternions(4);
-////	((x > 0) - (x < 0)) this corresponds to the sign operator
-//
-//	double x_sig,y_sig,z_sig;
-//	x_sig = RM(3,2)-RM(2,3);
-//	y_sig = RM(1,3)-RM(3,1);
-//	z_sig = RM(2,1)-RM(1,2);
-//	Quaternions[0] = 0.5*(((x_sig > 0) - (x_sig < 0))*sqrt(RM(1,1)-RM(2,2)-RM(3,3)+1));//x
-//	Quaternions[1] = 0.5*(((y_sig > 0) - (y_sig < 0))sqrt());//y
-//	Quaternions[2] = 0.5*(((z_sig > 0) - (z_sig < 0))sqrt());//z
-//	Quaternions[3] = 0.5*sqrt(pow((double)RM(1,1),2)+
-//			pow((double)RM(2,2),2)+
-//			pow((double)RM(3,3),2));//w
-//}
+cob_perception_msgs::DetectionArray GraspLocalizer::createDetectionArraySuctionMsgs(
+		const std::vector<GraspHypothesis>& hands) {
+	geometry_msgs::PoseArray msg_temp = createSuctionGraspsMsg(hands_);
+	cob_perception_msgs::DetectionArray bba;
+	for (int i = 0; i < hands_.size(); i++) {
+		cob_perception_msgs::Detection bb;
+		bb.pose.pose = msg_temp.poses[i];
+		bb.pose.header.stamp = message_stamp_;
+		bb.pose.header.frame_id = message_frame_id_;
+		bb.header = bb.pose.header;
+		bba.detections.push_back(bb);
+	}
+	bba.header.stamp = message_stamp_;
+	bba.header.frame_id = message_frame_id_;
 
+	return bba;
+}
 
 agile_grasp::Grasps GraspLocalizer::createGraspsMsgFromHands(const std::vector<Handle>& handles)
 {

@@ -65,6 +65,9 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 //			 std::cout<< "The number of clusters which have no circle is: "<< number_of_clusters_without_circle<<"\n";
 			 std::cout << "complete algorithm without  done in " << t_seg_end - t0 << " sec\n";
 
+
+
+
 			 /**
 			  * The coming section is used for plotting the results
 			  */
@@ -104,123 +107,131 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 			 extract_sub_cloud.filter(*cluster_cloud_complete);
 
 
-			 // plots
-			 if(first_plot_){
-			 viewer_comb_->removeAllShapes();
-			 viewer_comb_->removeCoordinateSystem();
-			 viewer_comb_-> removeAllPointClouds();
-//			 boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb (new pcl::visualization::PCLVisualizer ("Algorithim output"));
-			 // common comands
-			 viewer_comb_->initCameraParameters ();
-			 viewer_comb_->addCoordinateSystem (0.1);
-			 // part 1(pre processing)
-//			 int viewPortID_1(0);
-//			 viewer_comb_->createViewPort (0.0, 0.5, 0.5, 1.0, viewer_point_indicies_[0]);
-			 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> RawCloudColor (cloud, 150, 150, 150);
-			 viewer_comb_->addPointCloud<pcl::PointXYZ> (cloud_in,RawCloudColor,"RawCloud",viewer_point_indicies_[0]);// cloud_
-			 viewer_comb_->addText ("Raw input point cloud", 10, 10, "v1 text", viewer_point_indicies_[0]);
 
-			 // part 2(Post processing)
-//			 int viewPortID_2(0);
-//			 viewer_comb_->createViewPort (0.5, 0.5, 1.0, 1.0, viewer_point_indicies_[1]);
-			 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> PreprocessedCloudColor (cloud, 150, 150, 150);
-			 viewer_comb_->addPointCloud<pcl::PointXYZ> (cloud,PreprocessedCloudColor,"PreprocessedCloud",viewer_point_indicies_[1]);
-			 viewer_comb_->addText ("Post pre-processing", 10, 10, "v2 text", viewer_point_indicies_[1]);
-
-			 // part 3 (segmentation)
-//			 int viewPortID_3(0);
-//			 viewer_comb_->createViewPort (0.0, 0.0, 0.5, 0.5, viewer_point_indicies_[2]);
-			 viewer_comb_->addText ("Segmentation", 10, 10, "v3 text", viewer_point_indicies_[2]);
-			 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> SegmentationColor(segmented_colored_pc);
-			 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (segmented_colored_pc, SegmentationColor, "segmented_cloud",viewer_point_indicies_[2]);
-			 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (segmented_colored_pc, cloud_normals, 50, 0.05, "normals_v2",viewer_point_indicies_[2]);
-			 viewer_comb_->addPointCloud<pcl::PointXYZ> (cluster_cloud_circle,"CircleCloud_v1",viewer_point_indicies_[2]);
-
-			 // part 4 (Grasps)
-			 int viewPortID_4(0);
-//			 viewer_comb_->createViewPort (0.5, 0.0, 1.0, 0.5, viewer_point_indicies_[3]);
-			 viewer_comb_->addText ("GraspDetection", 10, 10, "v4 text", viewer_point_indicies_[3]);
-			 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> GraspsColor (cloud, 0, 150, 200);
-			 viewer_comb_->addPointCloud<pcl::PointXYZ> (cluster_cloud_complete, GraspsColor, "grasps_cloud",viewer_point_indicies_[3]);
-			 viewer_comb_->addPointCloud<pcl::PointXYZ> (cluster_cloud_circle,"CircleCloud_v2",viewer_point_indicies_[3]);
-//			 addCylindersToPlot(viewer_comb_,circle_inliners_of_all_clusters,circle_coefficients_of_all_clusters);
-			 first_plot_ = false;
-			 }
-			 else
 			 {
-				 //Updating the PC plot here
-				 viewer_comb_->updatePointCloud(cloud_in,"RawCloud");// update raw input
+				 boost::mutex::scoped_lock update_lock(updateModelMutex);
+				 // plots
+				 if(first_plot_){
+//					 plot_thread_start();
+					 viewer_comb_->removeAllShapes();
+					 viewer_comb_->removeCoordinateSystem();
+					 viewer_comb_-> removeAllPointClouds();
+		//			 boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb (new pcl::visualization::PCLVisualizer ("Algorithim output"));
+					 // common comands
+					 viewer_comb_->initCameraParameters ();
+					 viewer_comb_->addCoordinateSystem (0.1);
+					 // part 1(pre processing)
+		//			 int viewPortID_1(0);
+		//			 viewer_comb_->createViewPort (0.0, 0.5, 0.5, 1.0, viewer_point_indicies_[0]);
+					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> RawCloudColor (cloud, 150, 150, 150);
+					 viewer_comb_->addPointCloud<pcl::PointXYZ> (cloud_in,RawCloudColor,"RawCloud",viewer_point_indicies_[0]);// cloud_
+					 viewer_comb_->addText ("Raw input point cloud", 10, 10, "v1 text", viewer_point_indicies_[0]);
 
-				 viewer_comb_->updatePointCloud(cloud,"PreprocessedCloud");// update preprocessed cloud
+					 // part 2(Post processing)
+		//			 int viewPortID_2(0);
+		//			 viewer_comb_->createViewPort (0.5, 0.5, 1.0, 1.0, viewer_point_indicies_[1]);
+					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> PreprocessedCloudColor (cloud, 150, 150, 150);
+					 viewer_comb_->addPointCloud<pcl::PointXYZ> (cloud,PreprocessedCloudColor,"PreprocessedCloud",viewer_point_indicies_[1]);
+					 viewer_comb_->addText ("Post pre-processing", 10, 10, "v2 text", viewer_point_indicies_[1]);
 
-				 viewer_comb_->updatePointCloud(segmented_colored_pc, "segmented_cloud");// update segmented Poincloud
-				 viewer_comb_->updatePointCloud(cluster_cloud_circle,"CircleCloud_v1");// update segmented Poincloud
-				 viewer_comb_->removePointCloud("normals_v2",viewer_point_indicies_[2]);
-				 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (segmented_colored_pc, cloud_normals, 50, 0.05, "normals_v2",viewer_point_indicies_[2]);
+					 // part 3 (segmentation)
+		//			 int viewPortID_3(0);
+		//			 viewer_comb_->createViewPort (0.0, 0.0, 0.5, 0.5, viewer_point_indicies_[2]);
+					 viewer_comb_->addText ("Segmentation", 10, 10, "v3 text", viewer_point_indicies_[2]);
+					 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> SegmentationColor(segmented_colored_pc);
+					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (segmented_colored_pc, SegmentationColor, "segmented_cloud",viewer_point_indicies_[2]);
+					 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (segmented_colored_pc, cloud_normals, 50, 0.05, "normals_v2",viewer_point_indicies_[2]);
+					 viewer_comb_->addPointCloud<pcl::PointXYZ> (cluster_cloud_circle,"CircleCloud_v1",viewer_point_indicies_[2]);
 
-				 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> GraspsColor (cloud, 0, 150, 200);
-				 viewer_comb_->updatePointCloud(cluster_cloud_complete,GraspsColor,"grasps_cloud");
-				 viewer_comb_->updatePointCloud(cluster_cloud_circle,"CircleCloud_v2");
+					 // part 4 (Grasps)
+					 int viewPortID_4(0);
+		//			 viewer_comb_->createViewPort (0.5, 0.0, 1.0, 0.5, viewer_point_indicies_[3]);
+					 viewer_comb_->addText ("GraspDetection", 10, 10, "v4 text", viewer_point_indicies_[3]);
+					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> GraspsColor (cloud, 0, 150, 200);
+					 viewer_comb_->addPointCloud<pcl::PointXYZ> (cluster_cloud_complete, GraspsColor, "grasps_cloud",viewer_point_indicies_[3]);
+					 viewer_comb_->addPointCloud<pcl::PointXYZ> (cluster_cloud_circle,"CircleCloud_v2",viewer_point_indicies_[3]);
+		//			 addCylindersToPlot(viewer_comb_,circle_inliners_of_all_clusters,circle_coefficients_of_all_clusters);
+					 first_plot_ = false;
+				 }
+				 else
+				 {
+					 ROS_WARN_STREAM("HERE_problem in localize suction");
+					 //Updating the PC plot here
+					 viewer_comb_->updatePointCloud(cloud_in,"RawCloud");// update raw input
+
+					 viewer_comb_->updatePointCloud(cloud,"PreprocessedCloud");// update preprocessed cloud
+
+					 viewer_comb_->updatePointCloud(segmented_colored_pc, "segmented_cloud");// update segmented Poincloud
+					 viewer_comb_->updatePointCloud(cluster_cloud_circle,"CircleCloud_v1");// update segmented Poincloud
+					 viewer_comb_->removePointCloud("normals_v2",viewer_point_indicies_[2]);
+					 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (segmented_colored_pc, cloud_normals, 50, 0.05, "normals_v2",viewer_point_indicies_[2]);
+
+					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> GraspsColor (cloud, 0, 150, 200);
+					 viewer_comb_->updatePointCloud(cluster_cloud_complete,GraspsColor,"grasps_cloud");
+					 viewer_comb_->updatePointCloud(cluster_cloud_circle,"CircleCloud_v2");
+				 }
+
+				 viewer_comb_->removeAllShapes();
+				 for (int i; i < circle_inliners_of_all_clusters.size(); i++) {
+								 if (circle_inliners_of_all_clusters[i].indices.size()!= 0){
+									 if(print_string_data){
+									 std::cout<< "The parameters of cylinder "<<i<<" are \n";
+									 std::cout<< "x: "<<circle_coefficients_of_all_clusters[i].values[0]<<"\n";
+									 std::cout<< "y: "<<circle_coefficients_of_all_clusters[i].values[1]<<"\n";
+									 std::cout<< "z: "<<circle_coefficients_of_all_clusters[i].values[2]<<"\n";
+									 std::cout<< "radius: "<<circle_coefficients_of_all_clusters[i].values[3]<<"\n";
+									 std::cout<< "vector x: "<<circle_coefficients_of_all_clusters[i].values[4]<<"\n";
+									 std::cout<< "vector y: "<<circle_coefficients_of_all_clusters[i].values[5]<<"\n";
+									 std::cout<< "vector z: "<<circle_coefficients_of_all_clusters[i].values[6]<<"\n";
+									 std::cout<<"************************\n";
+									 }
+									 /*
+									  * add coordinate systems for each grasp...
+									  * Problem coordinate systems cannot all be removed, code bug
+									  */
+									 if(plot_coordinate_systems_for_grasps){
+									 Eigen:: Matrix3d xx;
+									 xx << suction_grasp_hyp_list[i].getAxis(),suction_grasp_hyp_list[i].getBinormal(),suction_grasp_hyp_list[i].getApproach();
+									 Eigen::Affine3d rot(xx);
+									 Eigen::Affine3d transl(Eigen::Translation3d(suction_grasp_hyp_list[i].getGraspSurface()));
+									Eigen::Affine3d combined = transl * rot;//Concatenates a translation and a linear transformation
+									Eigen::Affine3f combined_f = static_cast<Eigen::Affine3f>(combined);
+									viewer_comb_->addCoordinateSystem(0.01, combined_f, viewer_point_indicies_[3]);
+									 }
+
+	//			 					Eigen::Vector3d surface_grasp_point = suction_grasp_hyp_list[i].getGraspSurface();
+	//			 					Eigen::Vector3d end_point_xaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getAxis();
+	//			 					Eigen::Vector3d end_point_yaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getBinormal();
+	//			 					Eigen::Vector3d end_point_zaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getApproach();
+	//
+	//			 					pcl::PointXYZ start_point;
+	//			 					start_point.x = surface_grasp_point[0];start_point.y = surface_grasp_point[1];start_point.z = surface_grasp_point[2];
+	//			 					pcl::PointXYZ end_point_x;
+	//			 					end_point_x.x = end_point_xaixs[0];end_point_x.y = end_point_xaixs[1];end_point_x.z = end_point_xaixs[2];
+	//
+	//			 					viewer_comb_->addArrow(start_point,end_point_x,1.0,1.0,1.0,true,"arrow_x"+i,viewer_point_indicies_[3]);
+	//			 					pcl::PointXYZ end_point_y;
+	//			 					end_point_y.x = end_point_yaixs[0];end_point_y.y = end_point_yaixs[1];end_point_y.z = end_point_yaixs[2];
+	//			 					viewer_comb_->addArrow(start_point,end_point_y,1.0,1.0,1.0,true,"arrow_y"+i,viewer_point_indicies_[3]);
+	//			 					pcl::PointXYZ end_point_z;
+	//			 					end_point_z.x = end_point_zaixs[0];end_point_z.y = end_point_zaixs[1];end_point_z.z = end_point_zaixs[2];
+	//			 					viewer_comb_->addArrow(start_point,end_point_z,1.0,1.0,1.0,true,"arrow_z"+i,viewer_point_indicies_[3]);
+									 // the order of the Coefficients are different regarding the radis and direction
+									 pcl::ModelCoefficients circle_to_cylinder;
+									 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[0]);
+									 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[1]);
+									 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[2]);
+									 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[4]*2/100);
+									 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[5]*2/100);
+									 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[6]*2/100);// scaling down for plotting
+									 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[3]);
+									viewer_comb_->addCylinder(circle_to_cylinder,"Circle"+i,viewer_point_indicies_[3]);
+							 }
+						}
+				 update_lock.unlock();
 			 }
-			 viewer_comb_->removeAllShapes();
-			 for (int i; i < circle_inliners_of_all_clusters.size(); i++) {
-			 				 if (circle_inliners_of_all_clusters[i].indices.size()!= 0){
-			 					 if(print_string_data){
-			 					 std::cout<< "The parameters of cylinder "<<i<<" are \n";
-			 					 std::cout<< "x: "<<circle_coefficients_of_all_clusters[i].values[0]<<"\n";
-			 					 std::cout<< "y: "<<circle_coefficients_of_all_clusters[i].values[1]<<"\n";
-			 					 std::cout<< "z: "<<circle_coefficients_of_all_clusters[i].values[2]<<"\n";
-			 					 std::cout<< "radius: "<<circle_coefficients_of_all_clusters[i].values[3]<<"\n";
-			 					 std::cout<< "vector x: "<<circle_coefficients_of_all_clusters[i].values[4]<<"\n";
-			 					 std::cout<< "vector y: "<<circle_coefficients_of_all_clusters[i].values[5]<<"\n";
-			 					 std::cout<< "vector z: "<<circle_coefficients_of_all_clusters[i].values[6]<<"\n";
-			 					 std::cout<<"************************\n";
-			 					 }
-			 					 /*
-			 					  * add coordinate systems for each grasp...
-			 					  * Problem coordinate systems cannot all be removed, code bug
-			 					  */
-			 					 if(plot_coordinate_systems_for_grasps){
-			 					 Eigen:: Matrix3d xx;
-			 					 xx << suction_grasp_hyp_list[i].getAxis(),suction_grasp_hyp_list[i].getBinormal(),suction_grasp_hyp_list[i].getApproach();
-			 					 Eigen::Affine3d rot(xx);
-			 					 Eigen::Affine3d transl(Eigen::Translation3d(suction_grasp_hyp_list[i].getGraspSurface()));
-			 					Eigen::Affine3d combined = transl * rot;//Concatenates a translation and a linear transformation
-			 					Eigen::Affine3f combined_f = static_cast<Eigen::Affine3f>(combined);
-			 					viewer_comb_->addCoordinateSystem(0.01, combined_f, viewer_point_indicies_[3]);
-			 					 }
-
-//			 					Eigen::Vector3d surface_grasp_point = suction_grasp_hyp_list[i].getGraspSurface();
-//			 					Eigen::Vector3d end_point_xaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getAxis();
-//			 					Eigen::Vector3d end_point_yaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getBinormal();
-//			 					Eigen::Vector3d end_point_zaixs = surface_grasp_point + 0.02*suction_grasp_hyp_list[i].getApproach();
-//
-//			 					pcl::PointXYZ start_point;
-//			 					start_point.x = surface_grasp_point[0];start_point.y = surface_grasp_point[1];start_point.z = surface_grasp_point[2];
-//			 					pcl::PointXYZ end_point_x;
-//			 					end_point_x.x = end_point_xaixs[0];end_point_x.y = end_point_xaixs[1];end_point_x.z = end_point_xaixs[2];
-//
-//			 					viewer_comb_->addArrow(start_point,end_point_x,1.0,1.0,1.0,true,"arrow_x"+i,viewer_point_indicies_[3]);
-//			 					pcl::PointXYZ end_point_y;
-//			 					end_point_y.x = end_point_yaixs[0];end_point_y.y = end_point_yaixs[1];end_point_y.z = end_point_yaixs[2];
-//			 					viewer_comb_->addArrow(start_point,end_point_y,1.0,1.0,1.0,true,"arrow_y"+i,viewer_point_indicies_[3]);
-//			 					pcl::PointXYZ end_point_z;
-//			 					end_point_z.x = end_point_zaixs[0];end_point_z.y = end_point_zaixs[1];end_point_z.z = end_point_zaixs[2];
-//			 					viewer_comb_->addArrow(start_point,end_point_z,1.0,1.0,1.0,true,"arrow_z"+i,viewer_point_indicies_[3]);
-			 					 // the order of the Coefficients are different regarding the radis and direction
-			 					 pcl::ModelCoefficients circle_to_cylinder;
-			 					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[0]);
-			 					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[1]);
-			 					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[2]);
-			 					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[4]*2/100);
-			 					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[5]*2/100);
-			 					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[6]*2/100);// scaling down for plotting
-			 					 circle_to_cylinder.values.push_back(circle_coefficients_of_all_clusters[i].values[3]);
-			 					viewer_comb_->addCylinder(circle_to_cylinder,"Circle"+i,viewer_point_indicies_[3]);
-			 			 }
-			 			 }
 //			 viewer_comb_->spin();
-			 viewer_comb_->spinOnce(100);
+//			 viewer_comb_->spinOnce(100);
 //			 while (!viewer_comb_->wasStopped()){
 //				 viewer_comb_->spinOnce(100);
 //			 			 			   }
@@ -230,36 +241,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 
 	// draw down-sampled and workspace reduced cloud
 	cloud_plot = cloud;
-//
-//
-//  // set plotting within handle search on/off
-//  bool plots_hands;
-//  if (plotting_mode_ == PCL_PLOTTING)
-//		plots_hands = true;
-//  else
-//		plots_hands = false;
-//
-//	// find hand configurations
-//  HandSearch hand_search(finger_width_, hand_outer_diameter_, hand_depth_, hand_height_, init_bite_, num_threads_,
-//		num_samples_, plots_hands);
-//	suction_grasp_hyp_list = hand_search.findHands(cloud, pts_cam_source, indices, cloud_plot, calculates_antipodal, uses_clustering);
-//
-//	// remove hands at boundaries of workspace
-//	if (filters_boundaries_)
-//  {
-//    std::cout << "Filtering out hands close to workspace boundaries ...\n";
-//    suction_grasp_hyp_list = filterHands(suction_grasp_hyp_list);
-//    std::cout << " # hands left: " << suction_grasp_hyp_list.size() << "\n";
-//  }
-//
-//	double t2 = omp_get_wtime();
-//	std::cout << "Hand localization done in " << t2 - t0 << " sec\n";
-//
-//	if (plotting_mode_ == PCL_PLOTTING || true)
-//	{
-//		plot_.plotHands(suction_grasp_hyp_list, cloud_plot, "");
-//	}
-//	else if (plotting_mode_ == RVIZ_PLOTTING)
+
 	if (plotting_mode_ == RVIZ_PLOTTING)
 	{
 		visuals_frame_ = "camera_rgb_optical_frame";
@@ -267,29 +249,15 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 	}
 
 
-//	plot_.plotHands(suction_grasp_hyp_list, cloud_plot, "");// the function createNormalsCloud has been modified to reverse the directions of the normlals being ploted
 
-//	if(first_plot_){
-//	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> selected_points_color (selected_points_pc, 0, 150, 200);
-//	viewer_comb_->addPointCloud(selected_points_pc,selected_points_color,"selected_points",viewer_point_indicies_[3]);
-//	}
-//	pcl::visualization::PCLVisualizer viewerr("PCL Viewer");
-//	viewerr.addPointCloud<pcl::PointXYZ> (cloud,"PreprocessedCloud");
-//	viewerr.addText ("Post pre-processing", 10, 10, "v2 text");
-//	viewerr.initCameraParameters();
-//	viewerr.spinOnce(100);
+
 	PointCloud::Ptr selected_points_pc(new PointCloud);
 	struct callback_args cb_args;
 	cb_args.clicked_points_cloud = selected_points_pc;
 	cb_args.viewerPtr =pcl::visualization::PCLVisualizer::Ptr(viewer_comb_);
-
-//	viewerr.registerPointPickingCallback(pp_callback, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
-//	viewerr.registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
-//	viewerr.spin();
-//	viewer_comb_->registerPointPickingCallback(PointPickCallback,(void*)&cb_args);
 	viewer_comb_->registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
 	viewer_comb_->spin();
-//	viewerr.close();
+//	ploter_thread_.start_thread();
 	return suction_grasp_hyp_list;
 }
 
@@ -670,6 +638,70 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 //  std::cout <<"Coordinates of selected point are: \n"<< "x: "<<current_point.x << "y: " << current_point.y << "z: " << current_point.z << std::endl;
 //}
 
+//void Localization::visualize()
+//{
+//	for(int i = 0;i<100;i++){
+//	std::cout<<"The Thread has started";
+//	}
+////	try{
+////	viewer_comb_->spin();
+////	}
+////	catch(boost::thread_interrupted&)
+////	        {
+////	            cout << "Thread is stopped" << endl;
+////	            return;
+////	        }
+//}
+void Localization::visualize()
+{
+
+//	viewer_comb_->spin();
+	try{
+		std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< The Thread has started \n";
+		viewer_comb_->resetStoppedFlag();
+		//while(!viewer_comb_->wasStopped())
+		PointCloud::Ptr selected_points_pc(new PointCloud);
+		struct callback_args cb_args;
+
+		selected_points_pc.reset(new PointCloud);
+		cb_args.clicked_points_cloud = selected_points_pc;
+		cb_args.viewerPtr =pcl::visualization::PCLVisualizer::Ptr(viewer_comb_);
+
+	//	viewerr.registerPointPickingCallback(pp_callback, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
+	//	viewerr.registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
+	//	viewerr.spin();
+		viewer_comb_->registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
+
+		while(true)
+		{
+			boost::mutex::scoped_lock update_lock(updateModelMutex);
+
+			viewer_comb_->spinOnce(100);
+			// viewer_comb_->spin();
+
+			std::cout<<" <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< The Thread is running";
+			viewer_comb_->resetStoppedFlag();
+			update_lock.unlock();
+//			boost::posix_time::millisec workTime(10);
+//			boost::this_thread::sleep(workTime);
+			ros::Duration(0.25).sleep();
+		}
+	}
+	catch(boost::thread_interrupted&)
+	        {
+	            cout << "Thread is stopped" << endl;
+	            return;
+	        }
+	cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Thread is finished" << endl;
+}
+void Localization::plot_thread_start()
+{
+	ploter_thread_ = boost::thread (&Localization::visualize,this);
+}
+void Localization::plot_thread_join()
+{
+	ploter_thread_.join();
+}
 
 void Localization::pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
 {
@@ -678,11 +710,19 @@ void Localization::pp_callback (const pcl::visualization::PointPickingEvent& eve
 	  std::cout <<"No point selected";
     return;
   }
+  ROS_ERROR("in pp call back \n");
+
+  ROS_ERROR("could not get the mutex \n");
   pcl::PointXYZ current_point;
   event.getPoint(current_point.x, current_point.y, current_point.z);
-  data->clicked_points_cloud->points.push_back(current_point);
+
+  if(data->clicked_points_cloud->points.size()>6)
+	  data->clicked_points_cloud = PointCloud::Ptr (new PointCloud);
+  else
+	  data->clicked_points_cloud->points.push_back(current_point);
   // Draw clicked points in red:
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red (data->clicked_points_cloud, 255, 0, 0);
+  ROS_WARN_STREAM("HERE_problem in pp_callback");
   data->viewerPtr->removePointCloud("clicked_points",viewer_point_indicies_[0]);
   data->viewerPtr->addPointCloud(data->clicked_points_cloud, red, "clicked_points",viewer_point_indicies_[0]);
   data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
@@ -705,6 +745,7 @@ void Localization::pp_callback (const pcl::visualization::PointPickingEvent& eve
 		  if(max_y<data->clicked_points_cloud->points[i].y)
 			  max_y = data->clicked_points_cloud->points[i].y;
 	  }
+
 	  workspace_(0) = min_x;  workspace_(1) = max_x;  workspace_(2) = min_y;  workspace_(3) = max_y;
 	  std::cout <<"the new workspace spans x: "<<min_x <<" - "<< max_x<<" y: "<<min_y <<" - "<< max_y<<"\n";
   }
