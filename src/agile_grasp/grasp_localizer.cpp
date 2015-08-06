@@ -173,23 +173,23 @@ void GraspLocalizer::localizeGrasps()
     rate.sleep();
   }
 }
-
+/*
 bool GraspLocalizer::trigger(const std_srvs::Trigger::Request& req,
          const std_srvs::Trigger::Response& res)
 {
   ROS_INFO("trigger perception");
   trigger_ = true;
   return true;
-}
+}*/
 
 
 void GraspLocalizer::findSuctionGrasps()
 {
-  ros::Rate rate(1.0);
+  ros::Rate rate(1.0/20);
   std::vector<int> indices(0);
 
-  ros::NodeHandle n;
-  ros::ServiceServer service = n.advertiseService("trigger", &GraspLocalizer::trigger);
+//  ros::NodeHandle n;
+//  ros::ServiceServer service = n.advertiseService("trigger", &GraspLocalizer::trigger);
 
   int loop_counter = 0;
   while (ros::ok())

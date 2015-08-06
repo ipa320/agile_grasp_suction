@@ -186,7 +186,7 @@ public:
 
 //  std::vector QuaternionFromRotationalMatrix(const Eigen::MatrixX4d& RotationalMatrix);
 
-  bool trigger(const std_srvs::Trigger::Request& req, const std_srvs::Trigger::Response& res);
+//  bool trigger(const std_srvs::Trigger::Request& req, const std_srvs::Trigger::Response& res);
 
 private:
 	
