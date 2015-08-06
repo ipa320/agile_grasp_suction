@@ -174,16 +174,28 @@ void GraspLocalizer::localizeGrasps()
   }
 }
 
+bool GraspLocalizer::trigger(const std_srvs::Trigger::Request& req,
+         const std_srvs::Trigger::Response& res)
+{
+  ROS_INFO("trigger perception");
+  trigger_ = true;
+  return true;
+}
+
+
 void GraspLocalizer::findSuctionGrasps()
 {
   ros::Rate rate(1.0);
   std::vector<int> indices(0);
 
+  ros::NodeHandle n;
+  ros::ServiceServer service = n.advertiseService("trigger", &GraspLocalizer::trigger);
+
   int loop_counter = 0;
   while (ros::ok())
   {
     // wait for point clouds to arrive
-    if (num_clouds_received_ == num_clouds_)
+    if (num_clouds_received_ == num_clouds_ && trigger_)
     {
       // localize grasps
       if (num_clouds_ > 1)
@@ -223,6 +235,8 @@ void GraspLocalizer::findSuctionGrasps()
 
     ros::spinOnce();
     rate.sleep();
+    
+    trigger_ = false;
   }
 }
 //

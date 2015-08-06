@@ -256,7 +256,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 	cb_args.clicked_points_cloud = selected_points_pc;
 	cb_args.viewerPtr =pcl::visualization::PCLVisualizer::Ptr(viewer_comb_);
 	viewer_comb_->registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
-	viewer_comb_->spin();
+	//viewer_comb_->spin();
 //	ploter_thread_.start_thread();
 	return suction_grasp_hyp_list;
 }
