@@ -39,6 +39,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <cob_perception_msgs/DetectionArray.h>
 #include <std_srvs/Trigger.h>
+#include <std_srvs/Empty.h>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -186,7 +187,7 @@ public:
 
 //  std::vector QuaternionFromRotationalMatrix(const Eigen::MatrixX4d& RotationalMatrix);
 
-//  bool trigger(const std_srvs::Trigger::Request& req, const std_srvs::Trigger::Response& res);
+  bool trigger_capture(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
 
 private:
 	
@@ -269,6 +270,8 @@ private:
   int min_inliers_; ///< the minimum number of inliers for the handle search
   bool plots_handles_; ///< whether handles are plotted
   bool trigger_;
+  ros::NodeHandle node_handel_;
+  ros::ServiceServer service_handel_;
   static tf::TransformBroadcaster br_;/// the broadcaster used to update the TF tree
   /** constants for input point cloud types */
 	static const int POINT_CLOUD_2 = 0; ///< sensor_msgs/PointCloud2

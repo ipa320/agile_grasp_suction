@@ -5,14 +5,15 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
 	const ParametersSuction& params)
   : cloud_left_(new PointCloud()), cloud_right_(new PointCloud()),
   cloud_frame_(cloud_frame), end_effector_frame_(end_effector_frame), svm_file_name_(svm_file_name), num_clouds_(params.num_clouds_),
-  num_clouds_received_(0), size_left_(0)
+  num_clouds_received_(0), size_left_(0),node_handel_(node)
 {
+	//trigger service
+  service_handel_ = node_handel_.advertiseService("trigger", &GraspLocalizer::trigger_capture, this);
   // subscribe to input point cloud ROS topic
   if (cloud_type == CLOUD_SIZED)
 		cloud_sub_ = node.subscribe(cloud_topic, 1, &GraspLocalizer::cloud_sized_callback, this);
 	else if (cloud_type == POINT_CLOUD_2)
 		cloud_sub_ = node.subscribe(cloud_topic, 1, &GraspLocalizer::cloud_callback, this);
-
   // create ROS publisher for grasps
   grasps_pub_ = node.advertise<geometry_msgs::PoseArray>("grasps", 10);
   grasps_pub_bba_ = node.advertise<cob_perception_msgs::DetectionArray>("bounding_box_array", 10);
@@ -173,23 +174,24 @@ void GraspLocalizer::localizeGrasps()
     rate.sleep();
   }
 }
-/*
-bool GraspLocalizer::trigger(const std_srvs::Trigger::Request& req,
-         const std_srvs::Trigger::Response& res)
+
+bool GraspLocalizer::trigger_capture(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
 {
-  ROS_INFO("trigger perception");
-  trigger_ = true;
+//  ROS_INFO("trigger perception");
+    trigger_ = true;
+	res.success = true;
+	res.message = "TRUE";
+	ROS_DEBUG("I have received the trigger \n");
+	std::cout<<"I have received the trigger \n";
   return true;
-}*/
+}
 
 
 void GraspLocalizer::findSuctionGrasps()
 {
-  ros::Rate rate(1.0/20);
+  ros::Rate rate(1.0);
   std::vector<int> indices(0);
-
-//  ros::NodeHandle n;
-//  ros::ServiceServer service = n.advertiseService("trigger", &GraspLocalizer::trigger);
+  trigger_ = true;
 
   int loop_counter = 0;
   while (ros::ok())
@@ -197,8 +199,9 @@ void GraspLocalizer::findSuctionGrasps()
     // wait for point clouds to arrive
     if (num_clouds_received_ == num_clouds_ && trigger_)
     {
+    	std::cout << "The number of PC recived is/are: " <<num_clouds_ << "\n";
       // localize grasps
-      if (num_clouds_ > 1)
+      if (num_clouds_ > 1 )
       {
 //    	pcl::PointCloud<pcl::PointXYZRGB>::Ptr x (new pcl::PointCloud<pcl::PointXYZRGB>());
         PointCloud::Ptr cloud(new PointCloud());
@@ -216,6 +219,7 @@ void GraspLocalizer::findSuctionGrasps()
       // publish handles
       grasps_pub_.publish(createSuctionGraspsMsg(hands_));
       grasps_pub_bba_.publish(createDetectionArraySuctionMsgs(hands_));
+//      trigger_ = false;
       ros::Duration(1.0).sleep();
 
 //      // publish hands contained in handles
@@ -228,15 +232,19 @@ void GraspLocalizer::findSuctionGrasps()
     }
     else
     {
-			std::cout << "Number of clouds recived is no sufficent" << "\n"
+    	if(!trigger_){
+    		std::cout << "Trigger has not been recived... \n";
+//    		std::cout << "The number of PC recived is/are: " <<num_clouds_ << "\n";
+    	}
+    else
+    	{std::cout << "Number of clouds recived is no sufficent" << "\n"
 					<< "recieved: " << num_clouds_received_ << " requierd: "
 					<< num_clouds_ << "\n";
+    	}
     }
 
     ros::spinOnce();
     rate.sleep();
-    
-    trigger_ = false;
   }
 }
 //

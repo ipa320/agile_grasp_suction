@@ -289,7 +289,7 @@ public:
 	void plot_thread_start();
 	void plot_thread_join();
 
-	void pp_callback (const pcl::visualization::PointPickingEvent& event, void* args);
+	void point_pick_callback (const pcl::visualization::PointPickingEvent& event, void* args);
 	/**
 	 * \brief Set the dimensions of the robot's workspace.
 	 * \param workspace 1x6 vector containing the robot's workspace dimensions
@@ -561,7 +561,8 @@ private:
 	std::vector<int> viewer_point_indicies_;// the indices used to define the view ports for the viewer
 	bool first_plot_;// a flag to check if this is the first plot execution
 	boost::thread ploter_thread_;// a thread used for the plotting object
-	boost::mutex updateModelMutex;// mutex used to protect the plotting thread from racing
+//	boost::mutex updateModelMutex;// mutex used to protect the plotting thread from racing
+	boost::recursive_mutex updateModelMutex;
 
 	/** constants for plotting modes */
 	static const int NO_PLOTTING = 0; ///< no plotting

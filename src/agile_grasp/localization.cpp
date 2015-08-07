@@ -109,10 +109,10 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 
 
 			 {
-				 boost::mutex::scoped_lock update_lock(updateModelMutex);
+				 boost::recursive_mutex::scoped_lock update_lock(updateModelMutex);
 				 // plots
 				 if(first_plot_){
-//					 plot_thread_start();
+					 plot_thread_start();
 					 viewer_comb_->removeAllShapes();
 					 viewer_comb_->removeCoordinateSystem();
 					 viewer_comb_-> removeAllPointClouds();
@@ -155,7 +155,6 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 				 }
 				 else
 				 {
-					 ROS_WARN_STREAM("HERE_problem in localize suction");
 					 //Updating the PC plot here
 					 viewer_comb_->updatePointCloud(cloud_in,"RawCloud");// update raw input
 
@@ -228,7 +227,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 									viewer_comb_->addCylinder(circle_to_cylinder,"Circle"+i,viewer_point_indicies_[3]);
 							 }
 						}
-				 update_lock.unlock();
+//				 update_lock.unlock();
 			 }
 //			 viewer_comb_->spin();
 //			 viewer_comb_->spinOnce(100);
@@ -251,12 +250,8 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 
 
 
-	PointCloud::Ptr selected_points_pc(new PointCloud);
-	struct callback_args cb_args;
-	cb_args.clicked_points_cloud = selected_points_pc;
-	cb_args.viewerPtr =pcl::visualization::PCLVisualizer::Ptr(viewer_comb_);
-	viewer_comb_->registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
-	//viewer_comb_->spin();
+
+//	viewer_comb_->spinOnce();
 //	ploter_thread_.start_thread();
 	return suction_grasp_hyp_list;
 }
@@ -659,32 +654,33 @@ void Localization::visualize()
 	try{
 		std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< The Thread has started \n";
 		viewer_comb_->resetStoppedFlag();
-		//while(!viewer_comb_->wasStopped())
 		PointCloud::Ptr selected_points_pc(new PointCloud);
 		struct callback_args cb_args;
-
-		selected_points_pc.reset(new PointCloud);
 		cb_args.clicked_points_cloud = selected_points_pc;
 		cb_args.viewerPtr =pcl::visualization::PCLVisualizer::Ptr(viewer_comb_);
-
-	//	viewerr.registerPointPickingCallback(pp_callback, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
-	//	viewerr.registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
-	//	viewerr.spin();
-		viewer_comb_->registerPointPickingCallback(&Localization::pp_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
-
+		viewer_comb_->registerPointPickingCallback(&Localization::point_pick_callback, *this, (void*)&cb_args);// (pp_callback, (void*)&cb_args);
 		while(true)
 		{
-			boost::mutex::scoped_lock update_lock(updateModelMutex);
-
+			{
+			boost::recursive_mutex::scoped_try_lock update_lock(updateModelMutex);
+			if(update_lock.owns_lock()){
+//			boost::mutex::scoped_lock update_lock(updateModelMutex);
+		  	ROS_WARN_STREAM("mutex locked visualize");
 			viewer_comb_->spinOnce(100);
+			std::cout<<" <<<<<<<<<<<< The visualize Thread is running >>>>>>>>>>>>>>>>>>>>>>>>\n";
+			viewer_comb_->resetStoppedFlag();
+//			update_lock.unlock();
+			}
+			}
 			// viewer_comb_->spin();
 
-			std::cout<<" <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< The Thread is running";
-			viewer_comb_->resetStoppedFlag();
-			update_lock.unlock();
-//			boost::posix_time::millisec workTime(10);
-//			boost::this_thread::sleep(workTime);
-			ros::Duration(0.25).sleep();
+
+//			viewer_comb_->resetStoppedFlag();
+//			update_lock.unlock();
+//			updateModelMutex.unlock();
+			boost::posix_time::millisec workTime(50);
+			boost::this_thread::sleep(workTime);
+//			ros::Duration(0.25).sleep();
 		}
 	}
 	catch(boost::thread_interrupted&)
@@ -703,29 +699,44 @@ void Localization::plot_thread_join()
 	ploter_thread_.join();
 }
 
-void Localization::pp_callback (const pcl::visualization::PointPickingEvent& event, void* args)
+void Localization::point_pick_callback (const pcl::visualization::PointPickingEvent& event, void* args)
 {
   struct callback_args* data = (struct callback_args *)args;
   if (event.getPointIndex () == -1){
 	  std::cout <<"No point selected";
     return;
   }
-  ROS_ERROR("in pp call back \n");
-
-  ROS_ERROR("could not get the mutex \n");
+  boost::recursive_mutex::scoped_try_lock update_lock(updateModelMutex);
+  if(update_lock.owns_lock()){
+	  ROS_WARN("the point pick owns lock");
+  }
+  else
+	  ROS_WARN("the point pick does not own the  lock");
+//  ROS_ERROR("in pp call back \n");
+//  while(!updateModelMutex.try_lock())
+//  	{
+//  		ROS_WARN_STREAM("Can't get mutex lock in Point_pick");
+//  		boost::posix_time::millisec workTime(10);
+//  		boost::this_thread::sleep(workTime);
+//  	}
+//  	ROS_WARN_STREAM("got mutex lock Point_pick");
   pcl::PointXYZ current_point;
   event.getPoint(current_point.x, current_point.y, current_point.z);
-
+  ROS_WARN_STREAM("0 \n");
   if(data->clicked_points_cloud->points.size()>6)
 	  data->clicked_points_cloud = PointCloud::Ptr (new PointCloud);
   else
 	  data->clicked_points_cloud->points.push_back(current_point);
+  ROS_WARN_STREAM("1 \n");
   // Draw clicked points in red:
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red (data->clicked_points_cloud, 255, 0, 0);
   ROS_WARN_STREAM("HERE_problem in pp_callback");
   data->viewerPtr->removePointCloud("clicked_points",viewer_point_indicies_[0]);
+  ROS_WARN_STREAM("2 \n");
   data->viewerPtr->addPointCloud(data->clicked_points_cloud, red, "clicked_points",viewer_point_indicies_[0]);
+  ROS_WARN_STREAM("3 \n");
   data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
+  ROS_WARN_STREAM("4 \n");
   std::cout <<"The point selected has the coordinates: \n";
   std::cout << "x :" <<current_point.x << "y: " << current_point.y << "z: " << current_point.z << std::endl;
   if(data->clicked_points_cloud->points.size()>=2)// use the coordinates to filter the next image
@@ -749,7 +760,7 @@ void Localization::pp_callback (const pcl::visualization::PointPickingEvent& eve
 	  workspace_(0) = min_x;  workspace_(1) = max_x;  workspace_(2) = min_y;  workspace_(3) = max_y;
 	  std::cout <<"the new workspace spans x: "<<min_x <<" - "<< max_x<<" y: "<<min_y <<" - "<< max_y<<"\n";
   }
-
+//  updateModelMutex.unlock();
 }
 
 
