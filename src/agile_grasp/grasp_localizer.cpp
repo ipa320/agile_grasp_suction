@@ -219,7 +219,7 @@ void GraspLocalizer::findSuctionGrasps()
       // publish handles
       grasps_pub_.publish(createSuctionGraspsMsg(hands_));
       grasps_pub_bba_.publish(createDetectionArraySuctionMsgs(hands_));
-//      trigger_ = false;
+      trigger_ = false;
       ros::Duration(1.0).sleep();
 
 //      // publish hands contained in handles
