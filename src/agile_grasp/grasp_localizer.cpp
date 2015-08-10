@@ -295,8 +295,8 @@ geometry_msgs::PoseArray GraspLocalizer::createSuctionGraspsMsg(const std::vecto
 	{
   	msg.poses.push_back(createSuctionGraspMsg(hands[i]));
   }
-//  msg.header.stamp = ros::Time::now();
-  msg.header.stamp = message_stamp_;
+  msg.header.stamp = ros::Time::now();
+//  msg.header.stamp = message_stamp_;
   msg.header.frame_id = message_frame_id_;
   return msg;
 }
@@ -321,7 +321,8 @@ cob_perception_msgs::DetectionArray GraspLocalizer::createDetectionArraySuctionM
 	for (int i = 0; i < hands_.size(); i++) {
 		cob_perception_msgs::Detection bb;
 		bb.pose.pose = msg_temp.poses[i];
-		bb.pose.header.stamp = message_stamp_;
+//		bb.pose.header.stamp = message_stamp_;
+		bb.pose.header.stamp = ros::Time::now();
 		bb.pose.header.frame_id = message_frame_id_;
 		bb.header = bb.pose.header;
 		bba.detections.push_back(bb);
