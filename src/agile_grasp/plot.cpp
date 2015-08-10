@@ -255,8 +255,8 @@ void Plot::plotGraspsRviz(const std::vector<GraspHypothesis>& hand_list, const s
     position.x = hand_list[i].getGraspSurface()(0);
     position.y = hand_list[i].getGraspSurface()(1);
     position.z = hand_list[i].getGraspSurface()(2);
-    visualization_msgs::Marker marker = createApproachMarker(frame, position, -hand_list[i].getApproach(), i, color, 0.4,
-			0.004);
+    visualization_msgs::Marker marker = createApproachMarker(frame, position, -hand_list[i].getApproach(), i, color, 1.5,
+			0.01);
 		marker.ns = "grasp_hypotheses";
 		marker.id = i;
     marker_array.markers[i] = marker;

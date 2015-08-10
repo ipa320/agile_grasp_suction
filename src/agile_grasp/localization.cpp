@@ -652,7 +652,7 @@ void Localization::visualize()
 
 //	viewer_comb_->spin();
 	try{
-		std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< The Thread has started \n";
+// 		std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< The Thread has started \n";
 		viewer_comb_->resetStoppedFlag();
 		PointCloud::Ptr selected_points_pc(new PointCloud);
 		struct callback_args cb_args;
@@ -665,9 +665,9 @@ void Localization::visualize()
 			boost::recursive_mutex::scoped_try_lock update_lock(updateModelMutex);
 			if(update_lock.owns_lock()){
 //			boost::mutex::scoped_lock update_lock(updateModelMutex);
-		  	ROS_WARN_STREAM("mutex locked visualize");
+// 		  	ROS_WARN_STREAM("mutex locked visualize");
 			viewer_comb_->spinOnce(100);
-			std::cout<<" <<<<<<<<<<<< The visualize Thread is running >>>>>>>>>>>>>>>>>>>>>>>>\n";
+// 			std::cout<<" <<<<<<<<<<<< The visualize Thread is running >>>>>>>>>>>>>>>>>>>>>>>>\n";
 			viewer_comb_->resetStoppedFlag();
 //			update_lock.unlock();
 			}
