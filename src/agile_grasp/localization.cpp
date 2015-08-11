@@ -1049,8 +1049,7 @@ Eigen::Vector3d surface_point(
 					circle_coefficients_of_all_clusters[i].values[0],
 					circle_coefficients_of_all_clusters[i].values[1],
 					circle_coefficients_of_all_clusters[i].values[2]);
-			GraspHypothesis grasp(surface_point, direction_vectror_z,
-					direction_vectror_y, direction_vectror_x);
+			GraspHypothesis grasp(surface_point, direction_vectror_x, direction_vectror_y, direction_vectror_z);
 			suction_grasp_hyp_list.push_back(grasp);
 		}
 	}

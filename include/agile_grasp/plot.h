@@ -124,6 +124,14 @@ class Plot
 			bool is_antipodal = false);
 		
 		/** 
+		 * \brief Plot the grasp hypotheseses with all axies in Rviz.
+		 * \param hand_list the list of grasp hypotheses
+		 * \param frame the frame that the poses of the grasp hypotheses are relative to
+		*/
+		void plotGraspsandAxiesRviz(const std::vector<GraspHypothesis>& hand_list, const std::string& frame,
+					bool is_antipodal = false);
+
+		/**
 		 * \brief Plot the handles in Rviz.
 		 * \param handle_list the list of handles
 		 * \param frame the frame that the poses of the handle grasps are relative to

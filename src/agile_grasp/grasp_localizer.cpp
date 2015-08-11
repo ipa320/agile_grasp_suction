@@ -16,6 +16,7 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
 		cloud_sub_ = node.subscribe(cloud_topic, 1, &GraspLocalizer::cloud_callback, this);
   // create ROS publisher for grasps
   grasps_pub_ = node.advertise<geometry_msgs::PoseArray>("grasps", 10);
+  grasps_pub_pose_single_stamped = node.advertise<geometry_msgs::PoseStamped>("PoseStamped_grasps", 10);
   grasps_pub_bba_ = node.advertise<cob_perception_msgs::DetectionArray>("bounding_box_array", 10);
   // create localization object and initialize its parameters
   localization_ = new Localization(params.num_threads_, true, params.plotting_mode_);
@@ -219,6 +220,36 @@ void GraspLocalizer::findSuctionGrasps()
       // publish handles
       grasps_pub_.publish(createSuctionGraspsMsg(hands_));
       grasps_pub_bba_.publish(createDetectionArraySuctionMsgs(hands_));
+/*      for(int i=0;i<hands_.size();i++)
+      {
+    	  geometry_msgs::PoseStamped PS;
+    	  PS.header.stamp = ros::Time::now();
+    	  PS.header.frame_id = message_frame_id_;
+    	  Eigen::Matrix3d rot;
+    	  rot<< hands_[i].getAxis(),hands_[i].getBinormal(),hands_[i].getApproach();
+    	  std::cout<<"the ROT MATRIX IS \n"<<rot <<"\n";
+    	  std::cout<<"the Vectors are\n"<<hands_[i].getAxis()<<hands_[i].getBinormal()<<hands_[i].getApproach() <<"\n";
+    	  Eigen::Quaterniond q(rot);
+    	  q.normalize();
+    	  tf::quaternionEigenToMsg(q,PS.pose.orientation);
+    	  tf::pointEigenToMsg(hands_[i].getGraspSurface(), PS.pose.position);
+    	  grasps_pub_pose_single_stamped.publish(PS);
+    	  std::cout<<"please press a key to continue to tf quat frame\n";
+    	  cin.get();
+    	  tf::Quaternion tfQuat;
+    	  tf::Matrix3x3 tfRot(hands_[i].getAxis()[0],hands_[i].getAxis()[1],hands_[i].getAxis()[2],
+    			  hands_[i].getBinormal()[0],hands_[i].getBinormal()[1],hands_[i].getBinormal()[2],
+				  hands_[i].getApproach()[0],hands_[i].getApproach()[1],hands_[i].getApproach()[2]);
+    	  tfRot.getRotation(tfQuat);
+    	  tfQuat.normalize();
+    	  tf::quaternionTFToMsg(tfQuat,PS.pose.orientation);
+    	  tf::pointEigenToMsg(hands_[i].getGraspSurface(), PS.pose.position);
+    	  std::cout<<"please press a key to continue to next frame\n";
+    	  cin.get();
+    	  grasps_pub_pose_single_stamped.publish(PS);
+//    	  tf::Transform transform(tfRot);
+
+      }*/
       trigger_ = false;
       ros::Duration(1.0).sleep();
 

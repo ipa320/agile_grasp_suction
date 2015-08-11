@@ -56,9 +56,11 @@ public:
 	 * constructor used for suction grasps
 	 */
 	GraspHypothesis(const Eigen::Vector3d& surface_point,
-			const Eigen::Vector3d& approach_vector,const Eigen::Vector3d& x, const Eigen::Vector3d& y) :
+			const Eigen::Vector3d& x, const Eigen::Vector3d& y,
+			const Eigen::Vector3d& z) :
 			cam_source_(-1), grasp_surface_(surface_point), approach_(
-					approach_vector), axis_(x), binormal_(y) {}
+					z), axis_(x), binormal_(y) {
+	}
 
 	/**
 	 * \brief Constructor.

@@ -37,6 +37,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <cob_perception_msgs/DetectionArray.h>
 #include <std_srvs/Trigger.h>
 #include <std_srvs/Empty.h>
@@ -259,6 +260,7 @@ private:
   PointCloud::Ptr cloud_left_, cloud_right_; ///< the point clouds
   ros::Subscriber cloud_sub_; ///< the subscriber for the point cloud topic
   ros::Publisher grasps_pub_; ///< the publisher for the antipodal grasps
+  ros::Publisher grasps_pub_pose_single_stamped;// publishes all grasps as pose stamped
   ros::Publisher grasps_pub_bba_; ///< the publisher for the antipodal grasps using bounding box array
   Localization* localization_; ///< a pointer to a localization object
   std::vector<GraspHypothesis> hands_; ///< the grasp hypotheses found by the hand search

@@ -230,44 +230,95 @@ void Plot::createVisualPublishers(ros::NodeHandle& node, double marker_lifetime)
   marker_lifetime_ = marker_lifetime;
 }
 
-void Plot::plotGraspsRviz(const std::vector<GraspHypothesis>& hand_list, const std::string& frame, bool is_antipodal)
-{  
-  double red[3] = {1, 0, 0};
-  double cyan[3] = {0, 1, 1};
-  double* color;
-  if (is_antipodal)
-  {
+void Plot::plotGraspsandAxiesRviz(const std::vector<GraspHypothesis>& hand_list,
+		const std::string& frame, bool is_antipodal) {
+	double red[3] = { 1, 0, 0 };
+	double green[3] = { 0, 1, 0 };
+	double blue[3] = { 0, 0, 1 };
+	double cyan[3] = { 0, 1, 1 };
+	double alpha = 0.3;
+	double diameter = 0.005;
+	double* color;
+
+	if (is_antipodal) {
 		color = red;
 		std::cout << "Visualizing antipodal grasps in Rviz ...\n";
-	}
-	else
-	{
+	} else {
 		color = cyan;
 		std::cout << "Visualizing grasp hypotheses in Rviz ...\n";
 	}
-  
-  visualization_msgs::MarkerArray marker_array;
-  marker_array.markers.resize(hand_list.size());  
-  
-  for (int i=0; i < hand_list.size(); i++)
-  {
-    geometry_msgs::Point position;
-    position.x = hand_list[i].getGraspSurface()(0);
-    position.y = hand_list[i].getGraspSurface()(1);
-    position.z = hand_list[i].getGraspSurface()(2);
-    visualization_msgs::Marker marker = createApproachMarker(frame, position, -hand_list[i].getApproach(), i, color, 1.5,
-			0.01);
+	visualization_msgs::MarkerArray marker_array;
+	marker_array.markers.resize(hand_list.size()*3);
+
+	for (int i = 0; i < hand_list.size(); i++) {
+		geometry_msgs::Point position;
+		position.x = hand_list[i].getGraspSurface()(0);
+		position.y = hand_list[i].getGraspSurface()(1);
+		position.z = hand_list[i].getGraspSurface()(2);
+		visualization_msgs::Marker marker = createApproachMarker(frame,
+				position, -hand_list[i].getApproach(), i, color, alpha, diameter);
+		marker.ns = "grasp_hypotheses";
+		marker.id = 3*i;
+		marker_array.markers[3*i] = marker;
+
+		visualization_msgs::Marker marker1 = createApproachMarker(frame,
+						position, -hand_list[i].getBinormal(), i, green, alpha, diameter);
+				marker1.ns = "grasp_hypotheses";
+				marker1.id = 3*i + 1;
+				marker_array.markers[3*i + 1] = marker1;
+
+		visualization_msgs::Marker marker2 = createApproachMarker(frame,
+						position, -hand_list[i].getAxis(), i, red, alpha, diameter);
+				marker2.ns = "grasp_hypotheses";
+				marker2.id = 3*i +2;
+				marker_array.markers[3*i + 2] = marker2;
+	}
+
+	if (is_antipodal)
+		antipodal_pub_.publish(marker_array);
+	else
+		hypotheses_pub_.publish(marker_array);
+
+	ros::Duration(1.0).sleep();
+}
+
+
+void Plot::plotGraspsRviz(const std::vector<GraspHypothesis>& hand_list,
+		const std::string& frame, bool is_antipodal) {
+	double red[3] = { 1, 0, 0 };
+	double cyan[3] = { 0, 1, 1 };
+	double alpha = 0.3;
+	double diameter = 0.005;
+	double* color;
+
+	if (is_antipodal) {
+		color = red;
+		std::cout << "Visualizing antipodal grasps in Rviz ...\n";
+	} else {
+		color = cyan;
+		std::cout << "Visualizing grasp hypotheses in Rviz ...\n";
+	}
+	visualization_msgs::MarkerArray marker_array;
+	marker_array.markers.resize(hand_list.size());
+
+	for (int i = 0; i < hand_list.size(); i++) {
+		geometry_msgs::Point position;
+		position.x = hand_list[i].getGraspSurface()(0);
+		position.y = hand_list[i].getGraspSurface()(1);
+		position.z = hand_list[i].getGraspSurface()(2);
+		visualization_msgs::Marker marker = createApproachMarker(frame,
+				position, -hand_list[i].getApproach(), i, color, alpha, diameter);
 		marker.ns = "grasp_hypotheses";
 		marker.id = i;
-    marker_array.markers[i] = marker;
-  }
-  
-  if (is_antipodal)
+		marker_array.markers[i] = marker;
+	}
+
+	if (is_antipodal)
 		antipodal_pub_.publish(marker_array);
-  else
+	else
 		hypotheses_pub_.publish(marker_array);
-  
-  ros::Duration(1.0).sleep();
+
+	ros::Duration(1.0).sleep();
 }
 
 
@@ -409,9 +460,9 @@ visualization_msgs::Marker Plot::createApproachMarker(const std::string& frame, 
   p.x = center.x;
   p.y = center.y;
   p.z = center.z;
-  q.x = p.x - 0.03 * approach(0);
-  q.y = p.y - 0.03 * approach(1);
-  q.z = p.z - 0.03 * approach(2);
+  q.x = p.x - 0.09 * approach(0);
+  q.y = p.y - 0.09 * approach(1);
+  q.z = p.z - 0.09 * approach(2);
   marker.points.push_back(p);
   marker.points.push_back(q);
   return marker;
