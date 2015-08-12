@@ -207,7 +207,7 @@ void GraspLocalizer::findSuctionGrasps()
 //    	pcl::PointCloud<pcl::PointXYZRGB>::Ptr x (new pcl::PointCloud<pcl::PointXYZRGB>());
         PointCloud::Ptr cloud(new PointCloud());
         *cloud = *cloud_left_ + *cloud_right_;
-        hands_ = localization_->localizeSuctionGrasps(cloud, cloud_left_->size(), indices, false, false);
+        hands_ = localization_->localizeSuctionGrasps(cloud, cloud_left_->size(), indices, false, true);// last bool here is the planar removal
       }
       else
       {
@@ -264,7 +264,7 @@ void GraspLocalizer::findSuctionGrasps()
     else
     {
     	if(!trigger_){
-    		std::cout << "Trigger has not been recived... \n";
+//     		std::cout << "Trigger has not been recived... \n";
 //    		std::cout << "The number of PC recived is/are: " <<num_clouds_ << "\n";
     	}
     else
