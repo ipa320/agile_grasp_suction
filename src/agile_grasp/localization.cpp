@@ -245,7 +245,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 	{
 		visuals_frame_ = "camera_rgb_optical_frame";
 // 		plot_.plotGraspsRviz(suction_grasp_hyp_list, visuals_frame_);
-        plot_plotGraspsandAxiesRviz(suction_grasp_hyp_list, visuals_frame_);
+        plot_.plotGraspsandAxiesRviz(suction_grasp_hyp_list, visuals_frame_);
 	}
 
 

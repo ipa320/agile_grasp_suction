@@ -211,7 +211,7 @@ void GraspLocalizer::findSuctionGrasps()
       }
       else
       {
-        hands_ = localization_->localizeSuctionGrasps(cloud_left_, cloud_left_->size(), indices, false, false);
+        hands_ = localization_->localizeSuctionGrasps(cloud_left_, cloud_left_->size(), indices, false, true);
 			}
 // to be changed
 //      antipodal_hands_ = localization_->predictAntipodalHands(hands_, svm_file_name_);
