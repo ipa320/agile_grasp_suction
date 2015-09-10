@@ -549,7 +549,7 @@ private:
 	double angle_tollerance_; // [degrees] the tolerance for the circle detection from the given axis
 	double normal_distance_weight_;// range [0-1]
 	int max_number_of_iterations_circle_detection_;
-	double segmentation_distance_threshold_;//[meters] distance threshold from circle model, points further than the threshold are not considered
+	double segmentation_distance_threshold_;//[meters] distance threshold from circle model, points further than the threshold are not considered the smaller the value the more exact it is to a circle and less of a hollow cylinder
     double area_consideration_ratio_;
 
 	//plotting parameters

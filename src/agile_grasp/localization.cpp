@@ -132,6 +132,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 		//			 viewer_comb_->createViewPort (0.5, 0.5, 1.0, 1.0, viewer_point_indicies_[1]);
 					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> PreprocessedCloudColor (cloud, 150, 150, 150);
 					 viewer_comb_->addPointCloud<pcl::PointXYZ> (cloud,PreprocessedCloudColor,"PreprocessedCloud",viewer_point_indicies_[1]);
+					 viewer_comb_->addPointCloudNormals<pcl::PointXYZ, pcl::Normal> (cloud, cloud_normals, 25, 0.025, "normals_v2",viewer_point_indicies_[1]);// added to note the normals
 					 viewer_comb_->addText ("Post pre-processing", 10, 10, "v2 text", viewer_point_indicies_[1]);
 
 					 // part 3 (segmentation)
@@ -140,7 +141,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 					 viewer_comb_->addText ("Segmentation", 10, 10, "v3 text", viewer_point_indicies_[2]);
 					 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> SegmentationColor(segmented_colored_pc);
 					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (segmented_colored_pc, SegmentationColor, "segmented_cloud",viewer_point_indicies_[2]);
-					 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (segmented_colored_pc, cloud_normals, 50, 0.05, "normals_v2",viewer_point_indicies_[2]);
+//					 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (segmented_colored_pc, cloud_normals, 25, 0.05, "normals_v2",viewer_point_indicies_[2]); // removed for clarity
 					 viewer_comb_->addPointCloud<pcl::PointXYZ> (cluster_cloud_circle,"CircleCloud_v1",viewer_point_indicies_[2]);
 
 					 // part 4 (Grasps)
@@ -970,6 +971,10 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 		// fit the hull
 		hull3.setInputCloud(temp_cloud);
 		hull3.reconstruct(*temp_cloud, hull_vertices);//hull.getTotalArea(), hull.getDimension()
+//		std::cout << "the dimention of the hull is: "<< hull3.getDimension();
+//		std::cout << "the area of the hull is: "<< hull3.getTotalArea()<< "\n";
+//		std::cout << "the volume of the hull is: "<< hull3.getTotalVolume();
+//		plot_.plotCloud(temp_cloud, "The hull");
 		// check area condition and accordingly add or ignore the detected circle.
 		if (hull3.getTotalArea()
 				>= M_PI * pow(min_detected_radius, 2)

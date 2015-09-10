@@ -112,7 +112,7 @@ void GraspLocalizer::cloud_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
   }
   else if (num_clouds_received_ == 1)
     pcl::fromROSMsg(*msg, *cloud_right_);
-  std::cout << "Received cloud # " << num_clouds_received_ << " with " << msg->height * msg->width << " points\n";
+//   std::cout << "Received cloud # " << num_clouds_received_ << " with " << msg->height * msg->width << " points\n";
   num_clouds_received_++;
 }
 
@@ -207,11 +207,11 @@ void GraspLocalizer::findSuctionGrasps()
 //    	pcl::PointCloud<pcl::PointXYZRGB>::Ptr x (new pcl::PointCloud<pcl::PointXYZRGB>());
         PointCloud::Ptr cloud(new PointCloud());
         *cloud = *cloud_left_ + *cloud_right_;
-        hands_ = localization_->localizeSuctionGrasps(cloud, cloud_left_->size(), indices, false, true);// last bool here is the planar removal
+        hands_ = localization_->localizeSuctionGrasps(cloud, cloud_left_->size(), indices, false, false);// last bool here is the planar removal
       }
       else
       {
-        hands_ = localization_->localizeSuctionGrasps(cloud_left_, cloud_left_->size(), indices, false, true);
+        hands_ = localization_->localizeSuctionGrasps(cloud_left_, cloud_left_->size(), indices, false, false);
 			}
 // to be changed
 //      antipodal_hands_ = localization_->predictAntipodalHands(hands_, svm_file_name_);
@@ -250,32 +250,37 @@ void GraspLocalizer::findSuctionGrasps()
 //    	  tf::Transform transform(tfRot);
 
       }*/
-      trigger_ = false;
-      ros::Duration(1.0).sleep();
+      
+//       ros::Duration(1.0).sleep();
 
 //      // publish hands contained in handles
 //      grasps_pub_.publish(createGraspsMsgFromHands(handles_));
 //      ros::Duration(1.0).sleep();
 
       // reset
+      trigger_ = false;
       num_clouds_received_ = 0;
       loop_counter++;
     }
     else
     {
+        num_clouds_received_ = 0;
+        ros::spinOnce();
+        ros::Duration(0.1).sleep();
     	if(!trigger_){
 //     		std::cout << "Trigger has not been recived... \n";
 //    		std::cout << "The number of PC recived is/are: " <<num_clouds_ << "\n";
     	}
     else
-    	{std::cout << "Number of clouds recived is no sufficent" << "\n"
-					<< "recieved: " << num_clouds_received_ << " requierd: "
-					<< num_clouds_ << "\n";
+    	{
+//     	std::cout << "Number of clouds recived is no sufficent" << "\n"
+// 					<< "recieved: " << num_clouds_received_ << " requierd: "
+// 					<< num_clouds_ << "\n";
     	}
     }
 
     ros::spinOnce();
-    rate.sleep();
+//     rate.sleep();
   }
 }
 //

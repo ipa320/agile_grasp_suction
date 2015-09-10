@@ -15,14 +15,14 @@
     
 <!-- // parameters for segmentation (Region Growing)-->
 	<param name="normal_radius_search" value="0.01" /><!-- area for which normals are calculated -->
-	<param name="num_of_kdTree_neighbours" value="30" />
+	<param name="num_of_kdTree_neighbours" value="50" />
 	<!-- in degrees -->
 	<param name="angle_threshold_between_normals" value="3.5" /> 
 	<param name="curvature_threshold" value="1.0" />
-	<param name="minimum_size_of_cluster_allowed" value="300" />
+	<param name="minimum_size_of_cluster_allowed" value="20" />
 <!-- // parameters for segmentation (circle detection)-->			
-	<param name="min_detected_radius" value="0.030" />
-	<param name="max_detected_radius" value="0.040" /> 
+	<param name="min_detected_radius" value="0.020" />
+	<param name="max_detected_radius" value="0.0250" /> 
 	<param name="area_ratio_to_consider_circle" value="1.0" /> <!-- between 0 and 1 the ratio of to the minimal area clalculated by min_detected_radius to consider a circle grasp-->
 	<!-- [degrees] the tollerance for the circle detection from the given axis-->
 	<param name="angle_tollerance" value="4.0"  />
@@ -30,13 +30,13 @@
 	<param name="max_number_of_iterations_circle_detection" value="1000" />
 	<param name="segmentation_distance_threshold" value="0.004" />
 			
-	<rosparam param="workspace"> [-0.35, 0.28,-0.15, 0.23, -10, 10] </rosparam>
+	<rosparam param="workspace"> [-0.322843, 0.294081,-0.336842, 0.0437264, -10, 10] </rosparam>
     <rosparam param="camera_pose"> [0, 0.445417, 0.895323, 0.215, 
               1, 0, 0, -0.015, 
               0, 0.895323, -0.445417, 0.23, 
               0, 0, 0, 1] </rosparam>
 			
-			<!-- -->
+			<!--x :0.294081 y: 0.0437264 z: 0.978  x :-0.322843 y: -0.336842 z: 0.998   -->
     
 	</node>
 </launch>
