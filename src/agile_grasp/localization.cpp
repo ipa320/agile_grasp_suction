@@ -36,7 +36,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 		   // circle extraction
 		   std::vector<pcl::PointIndices> circle_inliners_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
 		   			circle_inliners_of_all_clusters.resize(clusters.size());
-		   std::vector<pcl::ModelCoefficients> circle_coefficients_of_all_clusters;// a vector of PointIndices where each is entry corresponds to a the indices of a detected circle in a cluster
+		   std::vector<pcl::ModelCoefficients> circle_coefficients_of_all_clusters;// a vector of ModelCoefficients where each is entry corresponds to a the ModelCoefficients of a detected circle in a cluster
 		   			circle_coefficients_of_all_clusters.resize(clusters.size());
 		   CircleExtraction(clusters, cloud, cloud_normals,circle_inliners_of_all_clusters,circle_coefficients_of_all_clusters);
 
@@ -905,7 +905,7 @@ std::vector<pcl::PointIndices> Localization::ClusterUsingRegionGrowing(
 	reg.extract (clusters);
 	double t_end = omp_get_wtime();
 	std::cout << "Clustering done in " <<  t_end -t_start << " sec\n";
-	std::cout << "Number of clusters: " << clusters.size()<< " sec\n";
+	std::cout << "Number of clusters: " << clusters.size()<< "\n";
 	segmented_colored_pc = reg.getColoredCloud();
 	return clusters;
 }
@@ -945,6 +945,7 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 
 	// defining the plane coefficients
 	for (int i = 0; i < circle_inliners_of_all_clusters.size(); i++) {
+		if (circle_inliners_of_all_clusters[i].indices.size() != 0){
 		PointCloud::Ptr temp_cloud(new PointCloud); // the segmented cloud after removing the points determined to not fall in a region
 		pcl::PointIndices::Ptr inlineers_circle_current(new pcl::PointIndices(circle_inliners_of_all_clusters[i])); // the inliners of the point indices
 		circle_coefficients_current = circle_coefficients_of_all_clusters[i];
@@ -971,6 +972,12 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 		// fit the hull
 		hull3.setInputCloud(temp_cloud);
 		hull3.reconstruct(*temp_cloud, hull_vertices);//hull.getTotalArea(), hull.getDimension()
+//		double area = pcl::calculatePolygonArea(*temp_cloud);
+//		double area2 = hull3.getTotalArea();
+//		std::cout <<"The area from the PCL lib is  :" <<area<< "\n";
+//		std::cout <<"The area from the hull lib is :" <<area2<< "\n";
+//		plot_.plotCloud(temp_cloud, "hull of circle onto plane");
+
 //		std::cout << "the dimention of the hull is: "<< hull3.getDimension();
 //		std::cout << "the area of the hull is: "<< hull3.getTotalArea()<< "\n";
 //		std::cout << "the volume of the hull is: "<< hull3.getTotalVolume();
@@ -991,6 +998,7 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 //			std::cout<<"the size of the cluster being resized: "<< circle_inliners_of_all_clusters[i].indices.size()<<"\n";
 			rejected_circles++;
 		}
+	}
 	}
 	double t_end = omp_get_wtime();
 	std::cout << "Hull fitting and area calcualation done in " <<  t_end -t_start << " sec\n";
@@ -1088,6 +1096,66 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 	for (int i = 0; i < clusters.size(); i++) {
 		pcl::PointIndices::Ptr aPtr(new pcl::PointIndices(clusters[i]));
 
+		// extractiion of the cluster
+		pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
+		PointCloud::Ptr cluster_cloud(new PointCloud);// contains the cloud where all detected circles are projected
+		// extract the points corresponding to the indices
+		extract_sub_cloud.setInputCloud(cloud);
+		extract_sub_cloud.setIndices(aPtr);
+		extract_sub_cloud.setNegative(false);
+		extract_sub_cloud.filter(*cluster_cloud);
+
+//		plot_.plotCloud(cluster_cloud, "The cluster raw");
+
+		// projection of the cluster
+		PointCloud::Ptr cloud_segmented(new PointCloud);
+		pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients);
+		pcl::PointIndices::Ptr plane_inliers (new pcl::PointIndices);
+		pcl::SACSegmentation<pcl::PointXYZ> seg;
+		seg.setOptimizeCoefficients (true);
+		seg.setModelType (pcl::SACMODEL_PLANE);
+		seg.setMethodType (pcl::SAC_RANSAC);
+		seg.setDistanceThreshold (0.01);
+		seg.setInputCloud(cluster_cloud);
+		seg.segment(*plane_inliers, *plane_coefficients);
+		// extraction of plane fitted cluster
+		extract_sub_cloud.setInputCloud(cluster_cloud);
+		extract_sub_cloud.setIndices(plane_inliers);
+		extract_sub_cloud.setNegative(false);
+		extract_sub_cloud.filter(*cloud_segmented);
+
+//		plot_.plotCloud(cloud_segmented, "The cluster plane inliners");
+
+		PointCloud::Ptr cloud_projected(new PointCloud);
+		pcl::ProjectInliers<pcl::PointXYZ> proj;
+		proj.setModelType (pcl::SACMODEL_PLANE);
+		proj.setIndices (plane_inliers);
+		proj.setInputCloud (cluster_cloud);
+		proj.setModelCoefficients (plane_coefficients);
+		proj.filter (*cloud_projected);
+
+//		plot_.plotCloud(cloud_projected, "The cluster plane projection");
+
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
+		std::vector<pcl::Vertices> mesh;
+		pcl::ConcaveHull<pcl::PointXYZ> chull;
+		chull.setInputCloud (cloud_projected);
+		chull.setAlpha(0.01);
+		chull.reconstruct (*cloud_hull,mesh);
+
+//		plot_.plotCloud(cloud_hull, "The hull plane projection");
+
+
+		double area = pcl::calculatePolygonArea(*cloud_hull);
+
+//		std::cout << "the area of the hull is: " <<area <<"\n";
+//		std::cout << "The Cluster has: "<< aPtr->indices.size()<<"\n";
+//		std::cout << "The segmentation has: "<< plane_inliers->indices.size()<<"\n";
+
+
+
+
+
 		// extraction of the normals of a sub-cloud i.e. one region from the regions
 		extract_sub_normals.setInputCloud(cloud_normals);
 		extract_sub_normals.setIndices(aPtr);
@@ -1148,13 +1216,48 @@ void Localization::CalculateNormalsForPointCloud(PointCloud::Ptr& cloud_in,
 		pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals)
 {
 	double t_start = omp_get_wtime();
+// This is an alternative method for obtaining the normals of the point cloud by first fitting a polynomail to the point cloud
+//	pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+//	mls.setComputeNormals (true);
+//	mls.setInputCloud (cloud_in);
+//	mls.setPolynomialFit (true);
+//	mls.setSearchMethod (tree);
+//	mls.setSearchRadius (normal_radius_search*2);
+//	pcl::PointCloud<pcl::PointNormal> cloud_normals2;
+//	pcl::PointCloud<pcl::PointNormal>::Ptr xxxxPN(new pcl::PointCloud<pcl::PointNormal> ());
+//	pcl::PointCloud<pcl::PointXYZ>::Ptr xxxxP(new pcl::PointCloud<pcl::PointXYZ> ());
+//	pcl::PointCloud<pcl::Normal>::Ptr xxxxN(new pcl::PointCloud<pcl::Normal> ());
+//	mls.process(*xxxxPN);
+//	xxxxN->resize(xxxxPN->points.size());
+//	xxxxP->resize(xxxxPN->points.size());
+//    for (int i = 0; i < xxxxPN->points.size(); i ++){
+//    	xxxxN->points[i].normal_x = xxxxPN->points[i].normal_x;
+//    	xxxxN->points[i].normal_y = xxxxPN->points[i].normal_y;
+//    	xxxxN->points[i].normal_z = xxxxPN->points[i].normal_z;
+//    	xxxxN->points[i].curvature = xxxxPN->points[i].curvature;
+////    	xxxxN->points[i].data_n = xxxxPN->points[i].data_n;
+//
+//    	xxxxP->points[i].x = xxxxPN->points[i].x;
+//    	xxxxP->points[i].y = xxxxPN->points[i].y;
+//    	xxxxP->points[i].z = xxxxPN->points[i].z;
+////    	xxxxP->points[i].data = xxxxPN->points[i].data;
+//    }
+//	plot_.plotCloud(xxxxP, "The smoothed cloud");
+//    cloud_normals = xxxxN;
+//    cloud_in = xxxxP;
+
 	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;// create normal estimator
 	normal_estimator.setInputCloud (cloud_in);
 	normal_estimator.setSearchMethod (tree);
 	normal_estimator.setRadiusSearch (normal_radius_search);
 	normal_estimator.compute (*cloud_normals);
+
 	double t_end = omp_get_wtime();
 	std::cout << "Normal calculation done in " <<  t_end -t_start << " sec\n";
+	std::cout << "Normal Noraml " <<  cloud_normals->points.size() << " \n";
+//	std::cout << "Normal Polynomial " <<  cloud_normals2.points.size() << " \n";
+	std::cout << "Cloud in " <<  cloud_in->points.size() << " \n";
+//	std::cout << "Cloud from smooth is " <<  xxxxPN->points.size() << " \n";
 }
 
 std::vector<GraspHypothesis> Localization::predictAntipodalHands(const std::vector<GraspHypothesis>& hand_list, 

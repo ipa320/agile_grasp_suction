@@ -70,7 +70,33 @@
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 #include <pcl/surface/convex_hull.h>
+#include <pcl/surface/concave_hull.h>
 #include <pcl/filters/project_inliers.h>
+
+// these includes have been added to try out the normal estimation using polonomial fitting
+#include <pcl/common/common.h>
+#include <pcl/io/obj_io.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/vtk_io.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/surface/mls.h>
+#include <pcl/surface/gp3.h>
+#include <pcl/surface/grid_projection.h>
+#include <pcl/surface/convex_hull.h>
+#include <pcl/surface/concave_hull.h>
+#include <pcl/surface/organized_fast_mesh.h>
+#include <pcl/surface/ear_clipping.h>
+#include <pcl/surface/poisson.h>
+#include <pcl/common/common.h>
+#include <boost/random.hpp>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <boost/make_shared.hpp>
+// ****
+#include <pcl/io/obj_io.h>
+#include <pcl/TextureMesh.h>
+#include <pcl/surface/texture_mapping.h>
+
 
 /** Localization class
  *

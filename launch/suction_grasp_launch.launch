@@ -15,10 +15,10 @@
     
 <!-- // parameters for segmentation (Region Growing)-->
 	<param name="normal_radius_search" value="0.01" /><!-- area for which normals are calculated -->
-	<param name="num_of_kdTree_neighbours" value="50" />
+	<param name="num_of_kdTree_neighbours" value="70" />
 	<!-- in degrees -->
-	<param name="angle_threshold_between_normals" value="3.5" /> 
-	<param name="curvature_threshold" value="1.0" />
+	<param name="angle_threshold_between_normals" value="4.0" /> 
+	<param name="curvature_threshold" value="0.07" />
 	<param name="minimum_size_of_cluster_allowed" value="20" />
 <!-- // parameters for segmentation (circle detection)-->			
 	<param name="min_detected_radius" value="0.020" />
