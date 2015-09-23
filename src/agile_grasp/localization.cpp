@@ -1096,57 +1096,58 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 	for (int i = 0; i < clusters.size(); i++) {
 		pcl::PointIndices::Ptr aPtr(new pcl::PointIndices(clusters[i]));
 
-		// extractiion of the cluster
-		pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
-		PointCloud::Ptr cluster_cloud(new PointCloud);// contains the cloud where all detected circles are projected
-		// extract the points corresponding to the indices
-		extract_sub_cloud.setInputCloud(cloud);
-		extract_sub_cloud.setIndices(aPtr);
-		extract_sub_cloud.setNegative(false);
-		extract_sub_cloud.filter(*cluster_cloud);
-
-//		plot_.plotCloud(cluster_cloud, "The cluster raw");
-
-		// projection of the cluster
-		PointCloud::Ptr cloud_segmented(new PointCloud);
-		pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients);
-		pcl::PointIndices::Ptr plane_inliers (new pcl::PointIndices);
-		pcl::SACSegmentation<pcl::PointXYZ> seg;
-		seg.setOptimizeCoefficients (true);
-		seg.setModelType (pcl::SACMODEL_PLANE);
-		seg.setMethodType (pcl::SAC_RANSAC);
-		seg.setDistanceThreshold (0.01);
-		seg.setInputCloud(cluster_cloud);
-		seg.segment(*plane_inliers, *plane_coefficients);
-		// extraction of plane fitted cluster
-		extract_sub_cloud.setInputCloud(cluster_cloud);
-		extract_sub_cloud.setIndices(plane_inliers);
-		extract_sub_cloud.setNegative(false);
-		extract_sub_cloud.filter(*cloud_segmented);
-
-//		plot_.plotCloud(cloud_segmented, "The cluster plane inliners");
-
-		PointCloud::Ptr cloud_projected(new PointCloud);
-		pcl::ProjectInliers<pcl::PointXYZ> proj;
-		proj.setModelType (pcl::SACMODEL_PLANE);
-		proj.setIndices (plane_inliers);
-		proj.setInputCloud (cluster_cloud);
-		proj.setModelCoefficients (plane_coefficients);
-		proj.filter (*cloud_projected);
+		// this part was used to project the clusters on to a plane then find a bounding contour wich was then used to find the area of the cluster
+//		// extractiion of the cluster
+//		pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
+//		PointCloud::Ptr cluster_cloud(new PointCloud);// contains the cloud where all detected circles are projected
+//		// extract the points corresponding to the indices
+//		extract_sub_cloud.setInputCloud(cloud);
+//		extract_sub_cloud.setIndices(aPtr);
+//		extract_sub_cloud.setNegative(false);
+//		extract_sub_cloud.filter(*cluster_cloud);
+//
+////		plot_.plotCloud(cluster_cloud, "The cluster raw");
+//
+//		// projection of the cluster
+//		PointCloud::Ptr cloud_segmented(new PointCloud);
+//		pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients);
+//		pcl::PointIndices::Ptr plane_inliers (new pcl::PointIndices);
+//		pcl::SACSegmentation<pcl::PointXYZ> seg;
+//		seg.setOptimizeCoefficients (true);
+//		seg.setModelType (pcl::SACMODEL_PLANE);
+//		seg.setMethodType (pcl::SAC_RANSAC);
+//		seg.setDistanceThreshold (0.01);
+//		seg.setInputCloud(cluster_cloud);
+//		seg.segment(*plane_inliers, *plane_coefficients);
+//		// extraction of plane fitted cluster
+//		extract_sub_cloud.setInputCloud(cluster_cloud);
+//		extract_sub_cloud.setIndices(plane_inliers);
+//		extract_sub_cloud.setNegative(false);
+//		extract_sub_cloud.filter(*cloud_segmented);
+//
+////		plot_.plotCloud(cloud_segmented, "The cluster plane inliners");
+//
+//		PointCloud::Ptr cloud_projected(new PointCloud);
+//		pcl::ProjectInliers<pcl::PointXYZ> proj;
+//		proj.setModelType (pcl::SACMODEL_PLANE);
+//		proj.setIndices (plane_inliers);
+//		proj.setInputCloud (cluster_cloud);
+//		proj.setModelCoefficients (plane_coefficients);
+//		proj.filter (*cloud_projected);
 
 //		plot_.plotCloud(cloud_projected, "The cluster plane projection");
 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
-		std::vector<pcl::Vertices> mesh;
-		pcl::ConcaveHull<pcl::PointXYZ> chull;
-		chull.setInputCloud (cloud_projected);
-		chull.setAlpha(0.01);
-		chull.reconstruct (*cloud_hull,mesh);
-
-//		plot_.plotCloud(cloud_hull, "The hull plane projection");
-
-
-		double area = pcl::calculatePolygonArea(*cloud_hull);
+//		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
+//		std::vector<pcl::Vertices> mesh;
+//		pcl::ConcaveHull<pcl::PointXYZ> chull;
+//		chull.setInputCloud (cloud_projected);
+//		chull.setAlpha(0.01);
+//		chull.reconstruct (*cloud_hull,mesh);
+//
+////		plot_.plotCloud(cloud_hull, "The hull plane projection");
+//
+//
+//		double area = pcl::calculatePolygonArea(*cloud_hull);
 
 //		std::cout << "the area of the hull is: " <<area <<"\n";
 //		std::cout << "The Cluster has: "<< aPtr->indices.size()<<"\n";
