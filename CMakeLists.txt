@@ -134,6 +134,7 @@ add_executable(train_svm src/nodes/train.cpp)
 add_executable(test_svm src/nodes/test.cpp)
 add_executable(find_grasps src/nodes/find_grasps.cpp)
 add_executable(find_suction_grasps src/nodes/find_suction_grasps.cpp)
+add_executable(PC_filter src/nodes/PC_filter.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -159,6 +160,7 @@ target_link_libraries(grasp_localizer handle localization rotating_hand ${catkin
 target_link_libraries(handle_search handle rotating_hand ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(plot grasp_hypothesis handle quadric ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(hand_search finger_hand grasp_hypothesis plot quadric rotating_hand ${PCL_LIBRARIES})
+target_link_libraries(PC_filter ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 #############
 ## Install ##
