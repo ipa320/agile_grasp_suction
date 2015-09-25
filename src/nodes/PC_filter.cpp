@@ -120,7 +120,7 @@ int main (int argc, char **argv)
 
 	// read parameters form the param server
 	node.param("rate", rate, 10);
-	node.param("number_of_PC_sampels", number_of_PC_sampels_, 1);
+	node.param("number_of_PC_sampels", number_of_PC_sampels_, 5);
 	node.param("cloud_frame", cloud_frame_, std::string("/camera_rgb_optical_frame"));
 	node.param("listen_topic", listen_topic, std::string("/camera/depth_registered/points"));
 	node.param("publish_topic", publish_topic, std::string("agile/filtered_3dPC"));
