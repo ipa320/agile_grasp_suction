@@ -236,7 +236,7 @@ void Plot::plotGraspsandAxiesRviz(const std::vector<GraspHypothesis>& hand_list,
 	double green[3] = { 0, 1, 0 };
 	double blue[3] = { 0, 0, 1 };
 	double cyan[3] = { 0, 1, 1 };
-	double alpha = 0.3;
+	double alpha = 0.6;
 	double diameter = 0.005;
 	double* color;
 
