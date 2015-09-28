@@ -23,6 +23,7 @@
 <!-- // parameters for segmentation (circle detection)-->			
 	<param name="min_detected_radius" value="0.020" />
 	<param name="max_detected_radius" value="0.0250" /> 
+	<param name="suction_gripper_radius" value="0.0125" /> 
 	<param name="area_ratio_to_consider_circle" value=".75" /> <!-- between 0 and 1 the ratio of to the minimal area clalculated by min_detected_radius to consider a circle grasp-->
 	<!-- [degrees] the tollerance for the circle detection from the given axis-->
 	<param name="angle_tollerance" value="4.0"  />

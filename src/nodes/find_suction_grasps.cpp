@@ -23,6 +23,7 @@ const int MINUMUM_SIZE_OF_CLUSTER_ALLOWED = 300;
 // parameters for segmentation (circle detection)
 const double MIN_DETECTED_RADIUS = 0.02;
 const double MAX_DETECTED_RADIUS = 0.03;
+const double SUCTION_GRIPPER_RADIUS = 0.0125;
 const double ANGLE_TOLERANCE = 4.0; // [degrees] the tolerance for the circle detection from the given axis
 const double NORMAL_DISTANCE_WEIGHT = 0.1;
 const int MAX_NR_ITER_CIRCLE_DETECTION = 1000;
@@ -67,6 +68,7 @@ int main(int argc, char** argv)
   node.param("minimum_size_of_cluster_allowed", params.minimum_size_of_cluster_allowed_, MINUMUM_SIZE_OF_CLUSTER_ALLOWED);
 
   // parameters for segmentation (circle detection)
+  node.param("suction_gripper_radius", params.suction_gripper_radius_, SUCTION_GRIPPER_RADIUS);
   node.param("min_detected_radius", params.min_detected_radius_, MIN_DETECTED_RADIUS);
   node.param("max_detected_radius", params.max_detected_radius_, MAX_DETECTED_RADIUS);
   node.param("angle_tollerance", params.angle_tollerance_, ANGLE_TOLERANCE);
@@ -100,6 +102,7 @@ int main(int argc, char** argv)
   std::cout << " Grasp Parameters\n";
   std::cout << "  min detected radius: " << params.min_detected_radius_ << "\n";
   std::cout << "  max detected radius: " << params.max_detected_radius_ << "\n";
+  std::cout << "  suction gripper radius_: " << params.suction_gripper_radius_ << "\n";
   std::cout << "  angle tollerance: " << params.angle_tollerance_ << "\n";
   std::cout << "  normal distance weight: " << params.normal_distance_weight_ << "\n";
   std::cout << "  max number of iterations circle detection: " << params.max_number_of_iterations_circle_detection_ << "\n";

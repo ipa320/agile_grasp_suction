@@ -29,6 +29,7 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
   localization_->setCurvatureThreshold(params.curvature_threshold_);
   localization_->setMinimumSizeOfClusterAllowed(params.minimum_size_of_cluster_allowed_);
   /**  Parameters for segmentation (circle detection) or hand geometry parameters */
+  localization_->setSuctionGripperRadius(params.suction_gripper_radius_);
   localization_->setMinDetectedRadius(params.min_detected_radius_);
   localization_->setMaxDetectedRadius(params.max_detected_radius_);
   localization_->setAngleTollerance(params.angle_tollerance_);

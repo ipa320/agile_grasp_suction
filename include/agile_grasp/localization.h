@@ -326,6 +326,11 @@ public:
 		workspace_ = workspace;
 	}
 	
+	void setSuctionGripperRadius(const double suction_gripper_radius)
+	{
+		suction_gripper_radius_ = suction_gripper_radius;
+	}
+
 	/**
 	 * \brief Set the number of samples to be used for the search.
 	 * \param num_samples the number of samples to be used for the search
@@ -573,6 +578,7 @@ private:
 	/**  Parameters for segmentation (circle detection) or hand geometry parameters */
 	double min_detected_radius_;//[meters]
 	double max_detected_radius_;//[meters]
+	double suction_gripper_radius_; //[meters] // used for area filtration using sectors
 	double angle_tollerance_; // [degrees] the tolerance for the circle detection from the given axis
 	double normal_distance_weight_;// range [0-1]
 	int max_number_of_iterations_circle_detection_;

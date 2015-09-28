@@ -944,6 +944,7 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 	std::vector<pcl::Vertices> hull_vertices; // where the verticies of the hull will be saved
 	double a,b,c,x0,y0,z0,d,r; // r is the radius of the currnet circle
 	int rejected_circles = 0;
+	double suction_gripper_radius = suction_gripper_radius_;
 
 	// defining the plane coefficients
 	for (int i = 0; i < circle_inliners_of_all_clusters.size(); i++) {
@@ -988,8 +989,8 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 		// check area condition and accordingly add or ignore the detected circle.
 //		double min_accpted_area = M_PI * pow((r+(segmentation_distance_threshold/2)), 2)* area_consideration_ratio; // this is used to remove the effect of the segmentation_distance_threshhold, which allows the circles to have padding points around them, thus increasing the area, making them more likely to be accepted
 
-		double min_accpted_area = (M_PI-acos(min_detected_radius/(r+segmentation_distance_threshold/2))) * pow((r+(segmentation_distance_threshold/2)), 2);
-		std::cout<< "the angle is: "<< acos(min_detected_radius/(r+segmentation_distance_threshold/2))*(180/M_PI)<<"\n";
+		double min_accpted_area = (M_PI-acos(suction_gripper_radius/(r+segmentation_distance_threshold/2))) * pow((r+(segmentation_distance_threshold/2)), 2);
+		std::cout<< "the angle is: "<< acos(suction_gripper_radius/(r+segmentation_distance_threshold/2))*(180/M_PI)<<"\n";
 		if (hull3.getTotalArea() >= min_accpted_area) {// area large enough consider
 			// append the inliner indecies of the detected circle and append the coeeficents
 			// in this case there is no need since the vector is already populated
