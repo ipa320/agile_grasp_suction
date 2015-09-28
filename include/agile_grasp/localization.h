@@ -299,7 +299,8 @@ public:
 			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			double min_detected_radius = 0,
-			double area_consideration_ratio = 0);
+			double area_consideration_ratio = 0,
+			double segmentation_distance_threshold = 0);
 
 	void PostProcessing(std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
