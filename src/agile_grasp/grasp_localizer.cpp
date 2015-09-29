@@ -362,6 +362,8 @@ cob_perception_msgs::DetectionArray GraspLocalizer::createDetectionArraySuctionM
 		bb.pose.header.stamp = ros::Time::now();
 		bb.pose.header.frame_id = message_frame_id_;
 		bb.header = bb.pose.header;
+		std::vector<double> bounding_box_dim = hands_[i].getBoundingBoxDimentions();
+		bb.bounding_box_lwh.x = bounding_box_dim[0],bb.bounding_box_lwh.y = bounding_box_dim[1], bb.bounding_box_lwh.z =bounding_box_dim[2];
 		bba.detections.push_back(bb);
 	}
 	bba.header.stamp = message_stamp_;

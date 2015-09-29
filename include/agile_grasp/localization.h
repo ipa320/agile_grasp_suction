@@ -303,13 +303,16 @@ public:
 			double segmentation_distance_threshold = 0);
 
 	void PostProcessing(std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
-			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
+			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
+			std::vector <pcl::PointIndices>& clusters, PointCloud::Ptr& cloud);
 
 	void GraspingVectorDirectionCorrection(const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
 
 	void CoodinateSystemCalculation(const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			const std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
+			std::vector <pcl::PointIndices>& clusters,
+			PointCloud::Ptr& cloud,
 			std::vector<GraspHypothesis>& suction_grasp_hyp_list);
 
 	void visualize();

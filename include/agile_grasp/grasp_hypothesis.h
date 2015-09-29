@@ -224,12 +224,22 @@ public:
 		grasp_width_ = w;
 	}
 
+	const std::vector<double>& getBoundingBoxDimentions() const {
+		return bounding_box_dimentions_;
+	}
+
+	void setBoundingBoxDimentions(
+			const std::vector<double>& boundingBoxDimentions) {
+		bounding_box_dimentions_ = boundingBoxDimentions;
+	}
+
 private:
 
 	int cam_source_; ///< the camera source of the sample
 	Eigen::Matrix3Xd points_for_learning_; ///< the points used by the SVM for training/predictin
 	std::vector<int> indices_points_for_learning_cam1_; ///< the points used by the SVM for training/predictin that belong to camera #1
 	std::vector<int> indices_points_for_learning_cam2_; ///< the points used by the SVM for training/predictin that belong to camera #2
+	std::vector<double> bounding_box_dimentions_;
 	Eigen::Vector3d axis_; ///< the hand axis
 	Eigen::Vector3d approach_; ///< the grasp approach vector (orthogonal to the hand axis)
 	Eigen::Vector3d binormal_; ///< the binormal (orthogonal to the hand axis and the approach vector)

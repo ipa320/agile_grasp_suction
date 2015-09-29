@@ -52,10 +52,10 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 		    * GraspingVectorDirectionCorrection is called inside
 		    */
 		   PostProcessing(circle_inliners_of_all_clusters,
-				   circle_coefficients_of_all_clusters);
+				   circle_coefficients_of_all_clusters, clusters, cloud);
 		   //coodinate system calculation
 		   CoodinateSystemCalculation(circle_inliners_of_all_clusters,
-				   circle_coefficients_of_all_clusters,
+				   circle_coefficients_of_all_clusters, clusters, cloud,
 				   suction_grasp_hyp_list);
 
 			 // Stats
@@ -1007,19 +1007,21 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 	}
 	}
 	double t_end = omp_get_wtime();
-	std::cout << "Hull fitting and area calcualation done in " <<  t_end -t_start << " sec\n";
+	std::cout << "Filtration according to area done in " <<  t_end -t_start << " sec\n";
 	std::cout << "Number of circles rejected due to area: " <<  rejected_circles << "\n";
 }
 
 void Localization::PostProcessing(
 		std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
-		std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters) {
+		std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
+		std::vector <pcl::PointIndices>& clusters, PointCloud::Ptr& cloud) {
 	GraspingVectorDirectionCorrection(circle_inliners_of_all_clusters, circle_coefficients_of_all_clusters);
 }
 
 void Localization::GraspingVectorDirectionCorrection(
 		const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 		std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters) {
+	double t_start = omp_get_wtime();
 	// post processing for proper result production
 	for (int i = 0; i < circle_inliners_of_all_clusters.size(); i++) {
 		if (circle_inliners_of_all_clusters[i].indices.size() != 0) {
@@ -1042,12 +1044,21 @@ void Localization::GraspingVectorDirectionCorrection(
 
 		}
 	}
+	double t_end = omp_get_wtime();
+	std::cout<<"Vector Direction Correction done in "<<t_end - t_start<<" sec\n";
 }
+
 
 void Localization::CoodinateSystemCalculation(
 		const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 		const std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
+		std::vector <pcl::PointIndices>& clusters, PointCloud::Ptr& cloud,
 		std::vector<GraspHypothesis>& suction_grasp_hyp_list) {
+
+	double t_start = omp_get_wtime();
+	pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
+	PointCloud::Ptr cluster_cloud(new PointCloud);// contains the cloud where all detected circles are projected
+
 	// creating a coordinate system using the vector obtained
 	for (int i = 0; i < circle_inliners_of_all_clusters.size(); i++) {
 		if (circle_inliners_of_all_clusters[i].indices.size() != 0) {
@@ -1055,24 +1066,93 @@ void Localization::CoodinateSystemCalculation(
 					circle_coefficients_of_all_clusters[i].values[4],
 					circle_coefficients_of_all_clusters[i].values[5],
 					circle_coefficients_of_all_clusters[i].values[6]);
-			Eigen::Vector3d direction_vectror_y(
-					// this arrangement offers one of the perpendicular vectors on z (the approach vector)
+			Eigen::Vector3d direction_vectror_y(				// this arrangement offers one of the perpendicular vectors on z (the approach vector)
 					0,
 					-circle_coefficients_of_all_clusters[i].values[6],
 					circle_coefficients_of_all_clusters[i].values[5]);
+
 			Eigen::Vector3d direction_vectror_x = direction_vectror_y.cross(
 					direction_vectror_z);
-//std::cout<<"the norms are: x: "<<direction_vectror_x.norm()<<" y: "<<direction_vectror_y.norm()<<" z: "<<direction_vectror_z.norm()<<"\n";
-direction_vectror_x.normalize();direction_vectror_y.normalize();direction_vectror_z.normalize();
-//std::cout<<"the norms are: x: "<<direction_vectror_x.norm()<<" y: "<<direction_vectror_y.norm()<<" z: "<<direction_vectror_z.norm()<<"\n";
-Eigen::Vector3d surface_point(
+			//std::cout<<"the norms are: x: "<<direction_vectror_x.norm()<<" y: "<<direction_vectror_y.norm()<<" z: "<<direction_vectror_z.norm()<<"\n";
+			direction_vectror_x.normalize();direction_vectror_y.normalize();direction_vectror_z.normalize();
+			//std::cout<<"the norms are: x: "<<direction_vectror_x.norm()<<" y: "<<direction_vectror_y.norm()<<" z: "<<direction_vectror_z.norm()<<"\n";
+			Eigen::Vector3d surface_point(
 					circle_coefficients_of_all_clusters[i].values[0],
 					circle_coefficients_of_all_clusters[i].values[1],
 					circle_coefficients_of_all_clusters[i].values[2]);
+
+
+		// fitting a bounding box to the cluster containing the grasp
+			pcl::PointIndices::Ptr aPtr(new pcl::PointIndices(clusters[i]));
+			// extract the points corresponding to the indices
+			extract_sub_cloud.setInputCloud(cloud);
+			extract_sub_cloud.setIndices(aPtr);
+			extract_sub_cloud.setNegative(false);
+			extract_sub_cloud.filter(*cluster_cloud); // cluster cloud contains the subcloud
+
+			// this part was used to project the clusters on to a plane then find a bounding contour wich was then used to find the area of the cluster
+					// extractiion of the cluster
+					pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
+					PointCloud::Ptr cluster_cloud(new PointCloud);// contains the cloud where all detected circles are projected
+					// extract the points corresponding to the indices
+					extract_sub_cloud.setInputCloud(cloud);
+					extract_sub_cloud.setIndices(aPtr);
+					extract_sub_cloud.setNegative(false);
+					extract_sub_cloud.filter(*cluster_cloud); // cluster cloud contains the subcloud
+
+			//		plot_.plotCloud(cluster_cloud, "The cluster raw");
+
+					// getting the centeroid of the PC_cluster and computing the eigen vectors corresonding to the majour axies
+					Eigen::Vector4f Cluster_Centroid;
+					pcl::compute3DCentroid(*cluster_cloud, Cluster_Centroid);
+					Eigen::Matrix3f covariance;
+					computeCovarianceMatrixNormalized(*cluster_cloud, Cluster_Centroid, covariance);
+					Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigen_solver(covariance, Eigen::ComputeEigenvectors);
+					Eigen::Matrix3f eigenVectorsPCA = eigen_solver.eigenvectors();
+					eigenVectorsPCA.col(2) = eigenVectorsPCA.col(0).cross(eigenVectorsPCA.col(1)); // the eigen vectors denote the orientation of the box
+
+					Eigen::Matrix4f projectionTransform(Eigen::Matrix4f::Identity());
+					projectionTransform.block<3,3>(0,0) = eigenVectorsPCA.transpose();
+					projectionTransform.block<3,1>(0,3) = -1.f * (projectionTransform.block<3,3>(0,0) * Cluster_Centroid.head<3>());
+					pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPointsProjected (new pcl::PointCloud<pcl::PointXYZ>); // the PC that was will be transformed to the origin oriented with the eigen vectors
+					pcl::transformPointCloud(*cluster_cloud, *cloudPointsProjected, projectionTransform);
+					// Get the minimum and maximum points of the transformed cloud.
+					pcl::PointXYZ minPoint, maxPoint;
+					pcl::getMinMax3D(*cloudPointsProjected, minPoint, maxPoint);
+					const Eigen::Vector3f meanDiagonal = 0.5f*(maxPoint.getVector3fMap() + minPoint.getVector3fMap());
+					// transfomation of box to original PC
+					const Eigen::Quaternionf bboxQuaternion(eigenVectorsPCA);
+					const Eigen::Vector3f bboxTransform = eigenVectorsPCA * meanDiagonal + Cluster_Centroid.head<3>();
+
+			//		plot_.plotCloud(cloudPointsProjected, "The cluster projected");
+
+//					// visualization of bounding box fitting
+//					pcl::visualization::PCLVisualizer *visu;
+//					visu = new pcl::visualization::PCLVisualizer ("PlyViewer");
+//					visu->addPointCloud(cloudPointsProjected, "bboxedCloud");
+//					visu->addPointCloud(cluster_cloud, "bboxedCloudcluster");
+//					Eigen::Vector3f translation_orig;
+//					translation_orig[0] = 0, translation_orig[1] = 0,translation_orig[2] = 0;
+//					Eigen::Quaternionf rotation_orig;
+//					rotation_orig.x() = 0,rotation_orig.y() = 0,rotation_orig.z() = 0,rotation_orig.w() = 1;
+//					visu->addCube(translation_orig, rotation_orig, maxPoint.x - minPoint.x, maxPoint.y - minPoint.y, maxPoint.z - minPoint.z, "bbox_orig");
+//					visu->addCube(bboxTransform, bboxQuaternion, maxPoint.x - minPoint.x, maxPoint.y - minPoint.y, maxPoint.z - minPoint.z, "bbox");
+//					visu->addCoordinateSystem(0.1);
+//					std::cout <<"The dimentions are: x: " << maxPoint.x - minPoint.x<<" y: "<<maxPoint.y - minPoint.y<<" z: "<<maxPoint.z - minPoint.z<< "\n";
+//					visu->spin();
+
+
+		// creating the grasp obj
 			GraspHypothesis grasp(surface_point, direction_vectror_x, direction_vectror_y, direction_vectror_z);
+			std::vector<double> LWH;
+			LWH.resize(3);
+			LWH[0] = maxPoint.x - minPoint.x, LWH[1] = maxPoint.y - minPoint.y, LWH[2] = maxPoint.z - minPoint.z;
+			grasp.setBoundingBoxDimentions(LWH);
 			suction_grasp_hyp_list.push_back(grasp);
 		}
 	}
+	double t_end = omp_get_wtime();
+	std::cout<<"Coordinate system calculation and bounding box calculation done in "<<t_end - t_start<<" sec\n";
 }
 
 void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
@@ -1106,14 +1186,53 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 //		// extractiion of the cluster
 //		pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
 //		PointCloud::Ptr cluster_cloud(new PointCloud);// contains the cloud where all detected circles are projected
-//		// extract the points corresponding to the indices
+////		// extract the points corresponding to the indices
 //		extract_sub_cloud.setInputCloud(cloud);
 //		extract_sub_cloud.setIndices(aPtr);
 //		extract_sub_cloud.setNegative(false);
-//		extract_sub_cloud.filter(*cluster_cloud);
+//		extract_sub_cloud.filter(*cluster_cloud); // cluster cloud contains the subcloud
 //
 ////		plot_.plotCloud(cluster_cloud, "The cluster raw");
 //
+//		// getting the centeroid of the PC_cluster and computing the eigen vectors corresonding to the majour axies
+//		Eigen::Vector4f Cluster_Centroid;
+//		pcl::compute3DCentroid(*cluster_cloud, Cluster_Centroid);
+//		Eigen::Matrix3f covariance;
+//		computeCovarianceMatrixNormalized(*cluster_cloud, Cluster_Centroid, covariance);
+//		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigen_solver(covariance, Eigen::ComputeEigenvectors);
+//		Eigen::Matrix3f eigenVectorsPCA = eigen_solver.eigenvectors();
+//		eigenVectorsPCA.col(2) = eigenVectorsPCA.col(0).cross(eigenVectorsPCA.col(1)); // the eigen vectors denote the orientation of the box
+//
+//		Eigen::Matrix4f projectionTransform(Eigen::Matrix4f::Identity());
+//		projectionTransform.block<3,3>(0,0) = eigenVectorsPCA.transpose();
+//		projectionTransform.block<3,1>(0,3) = -1.f * (projectionTransform.block<3,3>(0,0) * Cluster_Centroid.head<3>());
+//		pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPointsProjected (new pcl::PointCloud<pcl::PointXYZ>); // the PC that was will be transformed to the origin oriented with the eigen vectors
+//		pcl::transformPointCloud(*cluster_cloud, *cloudPointsProjected, projectionTransform);
+//		// Get the minimum and maximum points of the transformed cloud.
+//		pcl::PointXYZ minPoint, maxPoint;
+//		pcl::getMinMax3D(*cloudPointsProjected, minPoint, maxPoint);
+//		const Eigen::Vector3f meanDiagonal = 0.5f*(maxPoint.getVector3fMap() + minPoint.getVector3fMap());
+//		// transfomation of box to original PC
+//		const Eigen::Quaternionf bboxQuaternion(eigenVectorsPCA);
+//		const Eigen::Vector3f bboxTransform = eigenVectorsPCA * meanDiagonal + Cluster_Centroid.head<3>();
+//
+////		plot_.plotCloud(cloudPointsProjected, "The cluster projected");
+//
+//		// visualization of bounding box fitting
+//		pcl::visualization::PCLVisualizer *visu;
+//		visu = new pcl::visualization::PCLVisualizer ("PlyViewer");
+//		visu->addPointCloud(cloudPointsProjected, "bboxedCloud");
+//		visu->addPointCloud(cluster_cloud, "bboxedCloudcluster");
+//		Eigen::Vector3f translation_orig;
+//		translation_orig[0] = 0, translation_orig[1] = 0,translation_orig[2] = 0;
+//		Eigen::Quaternionf rotation_orig;
+//		rotation_orig.x() = 0,rotation_orig.y() = 0,rotation_orig.z() = 0,rotation_orig.w() = 1;
+//		visu->addCube(translation_orig, rotation_orig, maxPoint.x - minPoint.x, maxPoint.y - minPoint.y, maxPoint.z - minPoint.z, "bbox_orig");
+//		visu->addCube(bboxTransform, bboxQuaternion, maxPoint.x - minPoint.x, maxPoint.y - minPoint.y, maxPoint.z - minPoint.z, "bbox");
+//		visu->addCoordinateSystem(0.1);
+//		std::cout <<"The dimentions are: x: " << maxPoint.x - minPoint.x<<" y: "<<maxPoint.y - minPoint.y<<" z: "<<maxPoint.z - minPoint.z<< "\n";
+//		visu->spin();
+		//
 //		// projection of the cluster
 //		PointCloud::Ptr cloud_segmented(new PointCloud);
 //		pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients);
@@ -1261,9 +1380,9 @@ void Localization::CalculateNormalsForPointCloud(PointCloud::Ptr& cloud_in,
 
 	double t_end = omp_get_wtime();
 	std::cout << "Normal calculation done in " <<  t_end -t_start << " sec\n";
-	std::cout << "Normal Noraml " <<  cloud_normals->points.size() << " \n";
+//	std::cout << "Normal Noraml " <<  cloud_normals->points.size() << " \n";
 //	std::cout << "Normal Polynomial " <<  cloud_normals2.points.size() << " \n";
-	std::cout << "Cloud in " <<  cloud_in->points.size() << " \n";
+//	std::cout << "Cloud in " <<  cloud_in->points.size() << " \n";
 //	std::cout << "Cloud from smooth is " <<  xxxxPN->points.size() << " \n";
 }
 
