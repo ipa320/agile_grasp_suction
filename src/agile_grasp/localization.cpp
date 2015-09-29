@@ -1146,7 +1146,7 @@ void Localization::CoodinateSystemCalculation(
 			GraspHypothesis grasp(surface_point, direction_vectror_x, direction_vectror_y, direction_vectror_z);
 			std::vector<double> LWH;
 			LWH.resize(3);
-			LWH[0] = maxPoint.x - minPoint.x, LWH[1] = maxPoint.y - minPoint.y, LWH[2] = maxPoint.z - minPoint.z;
+			LWH[0] = maxPoint.z - minPoint.z, LWH[1] = maxPoint.y - minPoint.y, LWH[2] = maxPoint.x - minPoint.x;
 			grasp.setBoundingBoxDimentions(LWH);
 			suction_grasp_hyp_list.push_back(grasp);
 		}
