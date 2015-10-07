@@ -251,12 +251,6 @@ void GraspLocalizer::findSuctionGrasps()
 //    	  tf::Transform transform(tfRot);
 
       }*/
-      
-//       ros::Duration(1.0).sleep();
-
-//      // publish hands contained in handles
-//      grasps_pub_.publish(createGraspsMsgFromHands(handles_));
-//      ros::Duration(1.0).sleep();
 
       // reset
       trigger_ = false;

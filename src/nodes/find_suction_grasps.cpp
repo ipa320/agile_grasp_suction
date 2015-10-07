@@ -2,7 +2,7 @@
 
 #include <agile_grasp/grasp_localizer.h>
 
-const std::string CLOUD_TOPIC = "input_cloud";
+const std::string CLOUD_TOPIC = "/camera/depth_registered/points"; // the coud topic
 const std::string CLOUD_FRAME = "camera_rgb_optical_frame";
 const std::string END_EFFECTOR_FRAME = "camera_rgb_optical_frame";
 const int CLOUD_TYPE = 0;
@@ -31,7 +31,10 @@ const double SEGMENTATION_DIST_THREHOLD = 0.004;
 const double AREA_CONSIDERATION_RATIO= 1.0;
 
 
-
+/** The find_grasps.cpp file is responsible for interfacing the ros parameters with the grasp detection program, this file contains the main of the program.
+* all parameters have default values which will be used in the event of no corresponding parameter existing on the ros parameter server.
+* The function creates a GraspLocalize obj which loops through the algorithm.
+*/
 int main(int argc, char** argv)
 {
   // initialize ROS

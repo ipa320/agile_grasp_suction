@@ -924,13 +924,15 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 		std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 		double min_detected_radius,
 		double area_consideration_ratio,
-		double segmentation_distance_threshold) {
+		double segmentation_distance_threshold,
+		double suction_gripper_radius) {
 	double t_start = omp_get_wtime();
-	if(min_detected_radius==0 && area_consideration_ratio==0 && segmentation_distance_threshold == 0)
+	if(min_detected_radius==0 && area_consideration_ratio==0 && segmentation_distance_threshold == 0 && suction_gripper_radius == 0)
 	{
 		min_detected_radius = min_detected_radius_;
 		area_consideration_ratio = area_consideration_ratio_;
 		segmentation_distance_threshold = segmentation_distance_threshold_;
+		suction_gripper_radius = suction_gripper_radius_;
 	}
 	// fitting a hull to the circle inliners by projecting the circle inliners onto a plane that is defined by the circle coefficients
 
@@ -944,7 +946,6 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 	std::vector<pcl::Vertices> hull_vertices; // where the verticies of the hull will be saved
 	double a,b,c,x0,y0,z0,d,r; // r is the radius of the currnet circle
 	int rejected_circles = 0;
-	double suction_gripper_radius = suction_gripper_radius_;
 
 	// defining the plane coefficients
 	for (int i = 0; i < circle_inliners_of_all_clusters.size(); i++) {
@@ -989,7 +990,7 @@ void Localization::FiltrationAccToArea(const PointCloud::Ptr& cloud,
 		// check area condition and accordingly add or ignore the detected circle.
 //		double min_accpted_area = M_PI * pow((r+(segmentation_distance_threshold/2)), 2)* area_consideration_ratio; // this is used to remove the effect of the segmentation_distance_threshhold, which allows the circles to have padding points around them, thus increasing the area, making them more likely to be accepted
 
-		double min_accpted_area = (M_PI-acos(suction_gripper_radius/(r+segmentation_distance_threshold/2))) * pow((r+(segmentation_distance_threshold/2)), 2);
+		double min_accpted_area = (M_PI-acos(suction_gripper_radius/(r+segmentation_distance_threshold/2))) * pow((r+(segmentation_distance_threshold/2)), 2); // this minimum area is calculated as the minimum area of a circle that will hold the complete sunction_gripper inside it (to visualize draw 2 concentric circles 1 smaller than the other)
 //		std::cout<< "the angle is: "<< acos(suction_gripper_radius/(r+segmentation_distance_threshold/2))*(180/M_PI)<<"\n";
 		if (hull3.getTotalArea() >= min_accpted_area) {// area large enough consider
 			// append the inliner indecies of the detected circle and append the coeeficents

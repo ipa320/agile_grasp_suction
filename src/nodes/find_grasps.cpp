@@ -4,7 +4,7 @@
 #include <agile_grasp/grasp_localizer.h>
 
 
-const std::string CLOUD_TOPIC = "input_cloud";
+const std::string CLOUD_TOPIC = "/camera/depth_registered/points"; // the coud topic
 const std::string CLOUD_FRAME = "camera_rgb_optical_frame";
 const std::string SVM_FILE_NAME = "/home/baxter/svm";
 const int NUM_THREADS = 1;
@@ -21,7 +21,9 @@ const int CLOUD_TYPE = 0;
 const std::string CLOUD_TYPES[2] = {"sensor_msgs/PointCloud2", "grasp_affordances/CloudSized"};
 const std::string PLOT_MODES[3] = {"none", "pcl", "rviz"};
 
-
+//!the find_grasps.cpp file is responsible for interfacing the ros parameters with the grasp detection program, this file contains the main of the program.
+/*! all parameters have default values which will be used in the event of no corresponding parameter existing on the ros parameter server
+ */
 int main(int argc, char** argv)
 {
   // initialize ROS

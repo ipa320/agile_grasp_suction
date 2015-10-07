@@ -102,8 +102,9 @@ typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
  *
  * \brief High level interface for the localization of grasp hypotheses and handles
  * 
- * This class provides a high level interface to search for grasp hypotheses, antipodal grasps, and 
- * handles. It can also preprocess the point clouds.
+ * This class provides a high level interface to search for grasp hypotheses.
+ * The class does the preprocessing of the pointcloud, the localization of grasps, postprocessing of the grasps
+ * ploting of the results (seperate thread inside localization) and interfaces to the Plot class to plot to Rviz.
  * 
 */
 class Localization
@@ -117,12 +118,14 @@ public:
 
 	/**
 	 * \brief Default Constructor.
+	 * currently not being used
 	*/
 	Localization() : num_threads_(1), plotting_mode_(1), plots_camera_sources_(false), cloud_(new PointCloud)
 	{ }
 	
 	/**
 	 * \brief Constructor.
+	 * Note that the parameters for the localization obj must be set using the setters and getters. For an example check the GraspLocalizer constructor.
 	 * \param num_threads the number of threads to be used in the search
 	 * \param filter_boundaries whether grasp hypotheses that are close to the point cloud boundaries are filtered out
 	 * \param plots_hands whether grasp hypotheses are plotted
@@ -164,7 +167,7 @@ public:
 			const std::string& svm_filename);
 	
 	/**
-	 * \brief Localize hands in a given point cloud. this is the main localizeHands function
+	 * \brief Localize hands in a given point cloud. this is the main localize suction grasp function
 	 * \param cloud_in the input point cloud
 	 * \param indices the set of point cloud indices for which point neighborhoods are found
 	 * \param calculates_antipodal whether the grasp hypotheses are checked for being antipodal
@@ -269,6 +272,8 @@ public:
 	* \param the KD tree
 	* \param radius used to calculate the normals
 	* \param the Pointer to the memory address where the output will go
+	* \return a vector containing the point indicies of each cluster
+	* \return the segmented point cloud in segmented_colored_pc
 	*/
 	std::vector <pcl::PointIndices> ClusterUsingRegionGrowing(
 			const PointCloud::Ptr& cloud_in,
@@ -281,44 +286,97 @@ public:
 			const int min_size_of_cluster_allowed,
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr& segmented_colored_pc,
 			const int max_size_of_cluster_allowed = 1000000);
-
+	/**
+	 * \brief extract a circle from each cluster
+	 * \param clusters the clusters for which a circle will be fitted
+	 * \param cloud the cloud from which the subcloud (cluster) will be extracted
+	 * \param cloud_normals the normals of the cloud
+	 * \return a vector of circle coefficients
+	 * \return a vector of point indices corresponding to the points that are considered as circle inliers
+	 */
 	void CircleExtraction(
 			std::vector <pcl::PointIndices>& clusters,
 			PointCloud::Ptr& cloud,
 			pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals,
 			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
-
+	/**
+	 * \brief this function is a container function containing all the grasp filtration functions that are to be used.
+	 * changes the input parameters
+	 * \param min_detected_radius will be read from the parameter server via find_suction_grasp.cpp
+	 * \param area_consideration_ratio will be read from the parameter server via find_suction_grasp.cpp
+	 * \sa find_suction_grasp.cpp
+	 */
 	void GraspFiltration(const PointCloud::Ptr& cloud,
 			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			double min_detected_radius = 0,
 			double area_consideration_ratio = 0);
-
+	/**
+	 * \brief filters suction grasps according to area.
+	 * If area is smaller than area min the circle coefficients and inliners are resized to 0
+	 * the current implementation depends on finding the minimum area of the current circle that
+	 * would hold the full suction_gripper (circle) inside. This minimum area is calculated as the minimum area
+	 *  of a circle that will hold the complete sunction_gripper inside it (to visualize draw 2 concentric circles 1 smaller than the other)
+	 * \param segmentation_distance_threshold will be read from the parameter server via find_suction_grasp.cpp
+	 * \param area_consideration_ratio will be read from the parameter server via find_suction_grasp.cpp
+	 * \param min_detected_radius will be read from the parameter server via find_suction_grasp.cpp
+	 * \param suction_gripper_radius will be read from the parameter server via find_suction_grasp.cpp
+	 */
 	void FiltrationAccToArea(const PointCloud::Ptr& cloud,
 			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			double min_detected_radius = 0,
 			double area_consideration_ratio = 0,
-			double segmentation_distance_threshold = 0);
-
+			double segmentation_distance_threshold = 0,
+			double suction_gripper_radius = 0);
+	/**
+	 * \brief this function is a container function containing all the Post Processing functions that are to be used.
+	 * changes the input parameters
+	 * \sa GraspingVectorDirectionCorrection
+	 */
 	void PostProcessing(std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			std::vector <pcl::PointIndices>& clusters, PointCloud::Ptr& cloud);
-
+	/**
+	 * \brief aligns all the suction grasp vectors towards the camera
+	 * changes input parameters
+	 */
 	void GraspingVectorDirectionCorrection(const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
-
+	/**
+	 * \brief calculates a right hand coordinate system for each grasp from the grasp direction vector.
+	 * the grasp direction vector is the vector normal to the circle and is found inside the circle_coefficients
+	 */
 	void CoodinateSystemCalculation(const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			const std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			std::vector <pcl::PointIndices>& clusters,
 			PointCloud::Ptr& cloud,
 			std::vector<GraspHypothesis>& suction_grasp_hyp_list);
-
+	/**
+	 * \brief visualizes the pointcloud at different stages of processing
+	 * it is seperated into 4 parts as follows starting from the upper left and clockwise
+	 * - Upper left (1) is the raw cloud
+	 * - upper right (2)  is the preprocessed cloud
+	 * - lower left (3)is the region segmented cloud
+	 * - lower right (4) cloud is where the grasps are plotted as cylinders
+	 */
 	void visualize();
+	/**
+	 * \brief starts the visualization thread.
+	 * The thread is never joined since it should always run
+	 * \sa visualize
+	 */
 	void plot_thread_start();
+
 	void plot_thread_join();
 
+	/**
+	 * \brief call back method called when a point in the point cloud is clicked, responsible for cropping the point cloud (by manually changing the workspace)
+	 * clicks are registered by pressing shift and left click. When a point is clicked the coordinates of the point are displayed in the terminal and the points are colored red in the PCL visualizer.
+	 * If more than 2 points have been clicked the work space is set to be the largest box containing all the clicked points.
+	 * If more than 6 points have been clicked the workspace is reset and awaits new clicks
+	 */
 	void point_pick_callback (const pcl::visualization::PointPickingEvent& event, void* args);
 	/**
 	 * \brief Set the dimensions of the robot's workspace.
@@ -398,7 +456,7 @@ public:
 	}
 	
 	/**
-	 * \brief Set the height of the robot hand.
+	 * \brief Set the height of the robot hand (antopodial grasps).
 	 * \param hand_height the height of the robot hand, the hand extends plus/minus this value along the hand axis
 	*/
 	void setHandHeight(double hand_height)
@@ -523,8 +581,8 @@ private:
 			int size_left, bool uses_clustering);
 
 	/**
-	 * \brief Filter out points in the point cloud that lie outside the workspace dimensions and keep 
-	 * track of the camera source for each point that is not filtered out.
+	 * \brief Filter out points in the point cloud that lie outside the workspace.
+	 *  and keep track of the camera source for each point that is not filtered out.
 	 * \param[in] cloud_in the point cloud to be filtered
 	 * \param[in] pts_cam_source_in the camera source for each point in the point cloud
 	 * \param[out] cloud_out the filtered point cloud
@@ -572,20 +630,20 @@ private:
 
 	//parameters used only for suction grippers
 	/**  Segmentation(Region Growing) */
-	double normal_radius_search_;//Sphere radius that is to be used for determining the nearest neighbors used for the normal detection
-	int num_of_kdTree_neighbors_;// number of neighbors to be sampled from the KdTree
-	double angle_threshold_between_normals_;// [degrees]
-	double curvature_threshold_;// the curvature diff threshold of the region such that the surfaces are considered to be a region
-	int minimum_size_of_cluster_allowed_;// the minimum number of points to be detected to consider a region a group
+	double normal_radius_search_;///< Sphere radius that is to be used for determining the nearest neighbors used for the normal detection. Segmentation(Region Growing)
+	int num_of_kdTree_neighbors_;///< number of neighbors to be sampled from the KdTree. Segmentation(Region Growing)
+	double angle_threshold_between_normals_;///< [degrees] if the angles between normals is greater than this value the area will not be added to the cluster. Segmentation(Region Growing)
+	double curvature_threshold_;///< the curvature diff threshold of the region such that the surfaces are considered to be a region. Segmentation(Region Growing)
+	int minimum_size_of_cluster_allowed_;///< the minimum number of points to be detected to consider a region a group. Segmentation(Region Growing)
 
 	/**  Parameters for segmentation (circle detection) or hand geometry parameters */
-	double min_detected_radius_;//[meters]
-	double max_detected_radius_;//[meters]
-	double suction_gripper_radius_; //[meters] // used for area filtration using sectors
-	double angle_tollerance_; // [degrees] the tolerance for the circle detection from the given axis
-	double normal_distance_weight_;// range [0-1]
-	int max_number_of_iterations_circle_detection_;
-	double segmentation_distance_threshold_;//[meters] distance threshold from circle model, points further than the threshold are not considered the smaller the value the more exact it is to a circle and less of a hollow cylinder
+	double min_detected_radius_;///<[meters]. Segmentation (circle detection)
+	double max_detected_radius_;///<[meters]. Segmentation (circle detection)
+	double suction_gripper_radius_; ///<[meters] // used for area filtration using sectors. Segmentation (circle detection)
+	double angle_tollerance_; ///< [degrees] the tolerance for the circle detection from the given axis. Segmentation (circle detection)
+	double normal_distance_weight_;///< range [0-1]max_number_of_iterations_circle_detection_
+	int max_number_of_iterations_circle_detection_;///< The maximum number of iterations run by the RANSAC algorithm to find a cricle. Segmentation (circle detection)
+	double segmentation_distance_threshold_;///<[meters] distance threshold from circle model, points further than the threshold are not considered the smaller the value the more exact it is to a circle and less of a hollow cylinder. Segmentation (circle detection)
     double area_consideration_ratio_;
 
 	//plotting parameters
@@ -593,12 +651,12 @@ private:
 	bool filters_boundaries_; ///< whether grasp hypotheses close to the workspace boundaries are filtered out
 	int plotting_mode_; ///< what plotting mode is used
 	std::string visuals_frame_; ///< visualization frame for Rviz
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb_;// plotting object used for multiple cloud visualization
-	std::vector<int> viewer_point_indicies_;// the indices used to define the view ports for the viewer
-	bool first_plot_;// a flag to check if this is the first plot execution
-	boost::thread ploter_thread_;// a thread used for the plotting object
-//	boost::mutex updateModelMutex;// mutex used to protect the plotting thread from racing
-	boost::recursive_mutex updateModelMutex;
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_comb_;///< plotting object used for multiple cloud visualization. Upper left is the raw cloud, upper right is the preprocessed cloud, lower left is the region segmented cloud, lower right cloud is where the grasps are plotted as cylinders
+	std::vector<int> viewer_point_indicies_;///< the indices used to define the view ports for the viewer
+	bool first_plot_;///< a flag to check if this is the first plot execution
+	boost::thread ploter_thread_;///< a thread used for the plotting object
+//	boost::mutex updateModelMutex;///< mutex used to protect the plotting thread from racing
+	boost::recursive_mutex updateModelMutex;///< mutex used to protect the plotting thread from racing with processing thread
 
 	/** constants for plotting modes */
 	static const int NO_PLOTTING = 0; ///< no plotting

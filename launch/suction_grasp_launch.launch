@@ -2,35 +2,33 @@
 	<node name="find_suction_grasps" pkg="agile_grasp" type="find_suction_grasps" output="screen">
   	<param name="cloud_topic" value="/camera/depth_registered/points" />
     <param name="cloud_frame" value="/camera_rgb_optical_frame" />
-    <param name="end_effector_frame" value="/camera_rgb_optical_frame" />
-    <param name="cloud_type" value="0" />
+    <param name="end_effector_frame" value="/camera_rgb_optical_frame" /> <!-- currently not being used -->
+    <param name="cloud_type" value="0" /> <!-- 0 = PointCloud2, 1 = CloudSized -->
     <param name="num_threads" value="4" />
     <param name="num_clouds" value="1" />
     
     <param name="min_inliers" value="10" />
     <param name="plotting" value="2" />
-    <param name="marker_lifetime" value="0.0" />
+    <param name="marker_lifetime" value="0.0" /> <!-- number of seconds for which detected grasp hypothesis will be seen in rviz -->
     
 
     
 <!-- // parameters for segmentation (Region Growing)-->
-	<param name="normal_radius_search" value="0.01" /><!-- area for which normals are calculated -->
-	<param name="num_of_kdTree_neighbours" value="70" />
-	<!-- in degrees -->
-	<param name="angle_threshold_between_normals" value="4.0" /> 
+	<param name="normal_radius_search" value="0.01" />   <!-- area for which normals are calculated -->
+	<param name="num_of_kdTree_neighbours" value="70" /> <!-- number of neighbours which are taken around each neighnourhod seed point -->
+	<param name="angle_threshold_between_normals" value="4.0" /> <!-- in degrees -->
 	<param name="curvature_threshold" value="0.07" />
-	<param name="minimum_size_of_cluster_allowed" value="20" />
+	<param name="minimum_size_of_cluster_allowed" value="20" /> <!-- minimum number of points for a region to be considerd a cluster -->
+	
 <!-- // parameters for segmentation (circle detection)-->			
-	<param name="min_detected_radius" value="0.020" />
-	<param name="max_detected_radius" value="0.0250" /> 
-	<param name="suction_gripper_radius" value="0.0125" /> 
+	<param name="min_detected_radius" value="0.020" /> <!-- in meters -->
+	<param name="max_detected_radius" value="0.0250" /> <!-- in meters -->
+	<param name="suction_gripper_radius" value="0.0125" /> <!-- in meters -->
 	<param name="area_ratio_to_consider_circle" value=".75" /> <!-- between 0 and 1 the ratio of to the minimal area clalculated by min_detected_radius to consider a circle grasp-->
-	<!-- [degrees] the tollerance for the circle detection from the given axis-->
-	<param name="angle_tollerance" value="4.0"  />
+	<param name="angle_tollerance" value="4.0"  /><!-- [degrees] the tollerance for the circle detection from the given axis-->
 	<param name="normal_distance_weight" value="0.1" />
 	<param name="max_number_of_iterations_circle_detection" value="1000" />
-	<param name="segmentation_distance_threshold" value="0.004" />
-			
+	<param name="segmentation_distance_threshold" value="0.004" /> <!-- in meters --> <!-- the distance around the circular model for which points will be considerd inliners -->
 	<rosparam param="workspace"> [-0.322843, 0.294081,-0.336842, 0.0437264, -10, 10] </rosparam>
     <rosparam param="camera_pose"> [0, 0.445417, 0.895323, 0.215, 
               1, 0, 0, -0.015, 
@@ -38,6 +36,5 @@
               0, 0, 0, 1] </rosparam>
 			
 			<!--x :0.294081 y: 0.0437264 z: 0.978  x :-0.322843 y: -0.336842 z: 0.998   -->
-    
 	</node>
 </launch>

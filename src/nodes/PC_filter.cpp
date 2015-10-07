@@ -101,9 +101,12 @@ bool service_callback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Respon
 	trigger_flag_ = true;
 	return true;
 }
-// voxelization function
 
-// cropping function
+/**
+ * \brief on trigger reads a point cloud form a topic processes it and publishes it back
+ * The current implementation takes in a PC, downsamples and crops it then republishes it
+ * the parameters are read from the ros param server and all parameters have default values on which they fall back on
+ */
 int main (int argc, char **argv)
 {
 	// create node
@@ -127,7 +130,7 @@ int main (int argc, char **argv)
 	node.param("service_name", service_name, std::string("trigger_PC_filter"));
 	node.param("cell_size", cell_size_, 0.003);
 	node.getParam("workspace", workspace_);
-	// THIS MUST BE CHANGED LATER
+	// THIS MUST BE CHANGED LATER manual override
 	workspace_.resize(6);
 	workspace_[0] = -0.322843, workspace_[1] = 0.294081, workspace_[2] = -0.336842, workspace_[3] = 0.0437264;
 	workspace_[4] = -10,workspace_[5] = 10;
@@ -144,14 +147,12 @@ int main (int argc, char **argv)
 	}
 
 	ros::Rate r(rate); // determine the rate of calling
-	int loop_iter;
 	while (node.ok())
 	{
 //		PC_publisher.publish();
 //		ROS_DEBUG("running %i", loop_iter);
 		ros::spinOnce();
 		r.sleep();
-		++loop_iter;
 	}
 	return 0;
 }
