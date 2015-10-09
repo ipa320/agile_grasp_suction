@@ -39,7 +39,35 @@ void Plot::plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr
 	runViewer(viewer);
 }
 
+void Plot::plotSamples(const std::vector<int>& index_list, const PointCloudRGB::Ptr& cloud,std::string Title)
+{
+	PointCloudRGB::Ptr samples_cloud(new PointCloudRGB);
+	for (int i = 0; i < index_list.size(); i++)
+		samples_cloud->points.push_back(cloud->points[index_list[i]]);
+
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer(Title);
+	viewer->addPointCloud<pcl::PointXYZRGB>(cloud, "registered point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"registered point cloud");
+	viewer->addPointCloud<pcl::PointXYZRGB>(samples_cloud, "samples cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "samples cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0,
+		"samples cloud");
+	viewer->addCoordinateSystem(0.3);
+	runViewer(viewer);
+}
+
 void Plot::plotCloud(const PointCloud::Ptr& cloud,std::string Title)
+{
+	std::vector<int> indexx(cloud->size());
+	for (int i = 0;i<indexx.size();i++)
+			{
+				indexx[i] = i;
+			}
+	plotSamples(indexx,cloud,Title);
+}
+
+void Plot::plotCloud(const PointCloudRGB::Ptr& cloud,std::string Title)
 {
 	std::vector<int> indexx(cloud->size());
 	for (int i = 0;i<indexx.size();i++)
@@ -104,6 +132,33 @@ void Plot::plotCameraSource(const Eigen::VectorXi& pts_cam_source_in, const Poin
 	runViewer(viewer);
 }
 
+
+void Plot::plotCameraSource(const Eigen::VectorXi& pts_cam_source_in, const PointCloudRGB::Ptr& cloud)
+{
+	PointCloudRGB::Ptr left_cloud(new PointCloudRGB);
+	PointCloudRGB::Ptr right_cloud(new PointCloudRGB);
+
+	for (int i = 0; i < pts_cam_source_in.size(); i++)
+	{
+		if (pts_cam_source_in(i) == 0)
+			left_cloud->points.push_back(cloud->points[i]);
+		else if (pts_cam_source_in(i) == 1)
+			right_cloud->points.push_back(cloud->points[i]);
+	}
+
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Camera Sources");
+	viewer->addPointCloud<pcl::PointXYZRGB>(left_cloud, "left point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"left point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0,
+		"left point cloud");
+	viewer->addPointCloud<pcl::PointXYZRGB>(right_cloud, "right point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"right point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0,
+		"right point cloud");
+	runViewer(viewer);
+}
 
 PointCloudNormal::Ptr Plot::createNormalsCloud(
 	const std::vector<GraspHypothesis>& hand_list, bool plots_only_antipodal, bool plots_grasp_bottom)

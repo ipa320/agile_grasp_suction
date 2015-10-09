@@ -64,6 +64,7 @@
 
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudRGB;
 
 /** GraspLocalizer class
  *
@@ -260,6 +261,7 @@ private:
   std::string cloud_frame_; ///< the coordinate frame of the point cloud
   std::string end_effector_frame_; ///< the coordinate frame name of the end effector
   PointCloud::Ptr cloud_left_, cloud_right_; ///< the point clouds
+  PointCloudRGB::Ptr cloud_left_rgb_, cloud_right_rgb_; ///< the point clouds containing rgb data as well
   ros::Subscriber cloud_sub_; ///< the subscriber for the point cloud topic
   ros::Publisher grasps_pub_; ///< the publisher for the antipodal grasps
   ros::Publisher grasps_pub_pose_single_stamped;// publishes all grasps as pose stamped

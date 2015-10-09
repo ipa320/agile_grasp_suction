@@ -69,6 +69,7 @@
 #include <agile_grasp/plot.h>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudRGB;
 #include <pcl/surface/convex_hull.h>
 #include <pcl/surface/concave_hull.h>
 #include <pcl/filters/project_inliers.h>
@@ -120,7 +121,7 @@ public:
 	 * \brief Default Constructor.
 	 * currently not being used
 	*/
-	Localization() : num_threads_(1), plotting_mode_(1), plots_camera_sources_(false), cloud_(new PointCloud)
+	Localization() : num_threads_(1), plotting_mode_(1), plots_camera_sources_(false), cloud_(new PointCloud), cloud_rgb_(new PointCloudRGB)
 	{ }
 	
 	/**
@@ -132,7 +133,7 @@ public:
 	*/
 	Localization(int num_threads, bool filters_boundaries, int plotting_mode) :
 			num_threads_(num_threads), filters_boundaries_(filters_boundaries), 
-      plotting_mode_(plotting_mode), plots_camera_sources_(false), 
+      plotting_mode_(plotting_mode), plots_camera_sources_(false), cloud_rgb_(new PointCloudRGB),
       cloud_(new PointCloud), viewer_comb_(new pcl::visualization::PCLVisualizer ("Algorithim output"))
 	{
 		first_plot_ = true;
@@ -174,7 +175,7 @@ public:
 	 * \param uses_clustering whether clustering is used for processing the point cloud
 	 * \return the list of grasp hypotheses found
 	*/
-	std::vector<GraspHypothesis> localizeSuctionGrasps(const PointCloud::Ptr& cloud_in, int size_left,
+	std::vector<GraspHypothesis> localizeSuctionGrasps(const PointCloudRGB::Ptr& cloud_in, int size_left,
 			const std::vector<int>& indices, bool calculates_antipodal, bool uses_clustering,bool plot_on_flag = true);
 
 	/**
@@ -245,8 +246,8 @@ public:
 	* \param the Pointer to the memory address where the output will go
 	*/
 	void CalculateNormalsForPointCloud(
-			PointCloud::Ptr& cloud_in,
-			pcl::search::KdTree<pcl::PointXYZ>::Ptr& tree,
+			PointCloudRGB::Ptr& cloud_in,
+			pcl::search::KdTree<pcl::PointXYZRGB>::Ptr& tree,
 			double normal_radius_search,
 			pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals);
 
@@ -276,8 +277,8 @@ public:
 	* \return the segmented point cloud in segmented_colored_pc
 	*/
 	std::vector <pcl::PointIndices> ClusterUsingRegionGrowing(
-			const PointCloud::Ptr& cloud_in,
-			const pcl::search::KdTree<pcl::PointXYZ>::Ptr& tree,
+			const PointCloudRGB::Ptr& cloud_in,
+			const pcl::search::KdTree<pcl::PointXYZRGB>::Ptr& tree,
 			const double normal_radius_search,
 			const pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals,
 			const double angle_threshold_between_normals,
@@ -296,7 +297,7 @@ public:
 	 */
 	void CircleExtraction(
 			std::vector <pcl::PointIndices>& clusters,
-			PointCloud::Ptr& cloud,
+			PointCloudRGB::Ptr& cloud,
 			pcl::PointCloud<pcl::Normal>::Ptr& cloud_normals,
 			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters);
@@ -307,7 +308,7 @@ public:
 	 * \param area_consideration_ratio will be read from the parameter server via find_suction_grasp.cpp
 	 * \sa find_suction_grasp.cpp
 	 */
-	void GraspFiltration(const PointCloud::Ptr& cloud,
+	void GraspFiltration(const PointCloudRGB::Ptr& cloud,
 			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			double min_detected_radius = 0,
@@ -323,7 +324,7 @@ public:
 	 * \param min_detected_radius will be read from the parameter server via find_suction_grasp.cpp
 	 * \param suction_gripper_radius will be read from the parameter server via find_suction_grasp.cpp
 	 */
-	void FiltrationAccToArea(const PointCloud::Ptr& cloud,
+	void FiltrationAccToArea(const PointCloudRGB::Ptr& cloud,
 			std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			double min_detected_radius = 0,
@@ -337,7 +338,7 @@ public:
 	 */
 	void PostProcessing(std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
-			std::vector <pcl::PointIndices>& clusters, PointCloud::Ptr& cloud);
+			std::vector <pcl::PointIndices>& clusters, PointCloudRGB::Ptr& cloud);
 	/**
 	 * \brief aligns all the suction grasp vectors towards the camera
 	 * changes input parameters
@@ -351,7 +352,7 @@ public:
 	void CoodinateSystemCalculation(const std::vector<pcl::PointIndices>& circle_inliners_of_all_clusters,
 			const std::vector<pcl::ModelCoefficients>& circle_coefficients_of_all_clusters,
 			std::vector <pcl::PointIndices>& clusters,
-			PointCloud::Ptr& cloud,
+			PointCloudRGB::Ptr& cloud,
 			std::vector<GraspHypothesis>& suction_grasp_hyp_list);
 	/**
 	 * \brief visualizes the pointcloud at different stages of processing
@@ -566,6 +567,17 @@ private:
 	void voxelizeCloud(const PointCloud::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,
 			PointCloud::Ptr& cloud_out, Eigen::VectorXi& pts_cam_source_out, double cell_size);
 
+	/**
+	 * \brief Voxelize the point cloud and keep track of the camera source for each voxel.
+	 * \param[in] cloud_in the point cloud to be voxelized
+	 * \param[in] pts_cam_source_in the camera source for each point in the point cloud
+	 * \param[out] cloud_out the voxelized point cloud
+	 * \param[out] pts_cam_source_out the camera source for each point in the voxelized cloud
+	 * \param[in] cell_size the size of each voxel
+	*/
+	void voxelizeCloud(const PointCloudRGB::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,
+			PointCloudRGB::Ptr& cloud_out, Eigen::VectorXi& pts_cam_source_out, double cell_size);
+
      /**
 	 * \brief Preproces the point cloud and keep track of the camera sources. The function removes NAN points,
 	 * filters the points out side the work space and if the uses_clustering flag is true removes the largest plane in the Point cloud
@@ -576,8 +588,8 @@ private:
 	 * \retrun the Preprocessed point cloud
 	 */
 
-	PointCloud::Ptr PointCloudPreProcessing(
-			const PointCloud::Ptr& cloud_in, PointCloud::Ptr& cloud_plot,
+	PointCloudRGB::Ptr PointCloudPreProcessing(
+			const PointCloudRGB::Ptr& cloud_in, PointCloudRGB::Ptr& cloud_plot,
 			int size_left, bool uses_clustering);
 
 	/**
@@ -591,6 +603,17 @@ private:
 	void filterWorkspace(const PointCloud::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,
 			PointCloud::Ptr& cloud_out, Eigen::VectorXi& pts_cam_source_out);
 	
+	/**
+	 * \brief Filter out points in the point cloud that lie outside the workspace.
+	 *  and keep track of the camera source for each point that is not filtered out.
+	 * \param[in] cloud_in the point cloud to be filtered
+	 * \param[in] pts_cam_source_in the camera source for each point in the point cloud
+	 * \param[out] cloud_out the filtered point cloud
+	 * \param[out] pts_cam_source_out the camera source for each point in the filtered cloud
+	*/
+	void filterWorkspace(const PointCloudRGB::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,
+				PointCloudRGB::Ptr& cloud_out, Eigen::VectorXi& pts_cam_source_out);
+
 	/**
 	 * \brief Filter out grasp hypotheses that are close to the workspace boundaries.
 	 * \param hand_list the list of grasp hypotheses to be filtered
@@ -615,6 +638,7 @@ private:
 	Eigen::VectorXd workspace_; ///< the robot's workspace dimensions
 	Eigen::Matrix3Xd cloud_normals_; ///< the normals for each point in the point cloud
 	PointCloud::Ptr cloud_; ///< the input point cloud
+	PointCloudRGB::Ptr cloud_rgb_; ///< the input point cloud
 	int num_threads_; ///< the number of CPU threads used in the search
 
 	//parameters used only for finger grippers

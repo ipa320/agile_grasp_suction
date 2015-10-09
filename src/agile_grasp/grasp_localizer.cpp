@@ -4,6 +4,7 @@ GraspLocalizer::GraspLocalizer(ros::NodeHandle& node, const std::string& cloud_t
 	const std::string& cloud_frame, const std::string& end_effector_frame, int cloud_type, const std::string& svm_file_name,
 	const ParametersSuction& params)
   : cloud_left_(new PointCloud()), cloud_right_(new PointCloud()),
+	cloud_left_rgb_(new PointCloudRGB()) ,cloud_right_rgb_(new PointCloudRGB()),
   cloud_frame_(cloud_frame), end_effector_frame_(end_effector_frame), svm_file_name_(svm_file_name), num_clouds_(params.num_clouds_),
   num_clouds_received_(0), size_left_(0),node_handel_(node)
 {
@@ -107,11 +108,13 @@ void GraspLocalizer::cloud_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
     std::exit(EXIT_FAILURE);
   }
   if (num_clouds_received_ == 0){
+	pcl::fromROSMsg(*msg, *cloud_left_rgb_);
     pcl::fromROSMsg(*msg, *cloud_left_);
     message_stamp_ = msg->header.stamp;
     message_frame_id_ = msg->header.frame_id;
   }
   else if (num_clouds_received_ == 1)
+	pcl::fromROSMsg(*msg, *cloud_right_rgb_);
     pcl::fromROSMsg(*msg, *cloud_right_);
 //   std::cout << "Received cloud # " << num_clouds_received_ << " with " << msg->height * msg->width << " points\n";
   num_clouds_received_++;
@@ -206,13 +209,15 @@ void GraspLocalizer::findSuctionGrasps()
       if (num_clouds_ > 1 )
       {
 //    	pcl::PointCloud<pcl::PointXYZRGB>::Ptr x (new pcl::PointCloud<pcl::PointXYZRGB>());
-        PointCloud::Ptr cloud(new PointCloud());
-        *cloud = *cloud_left_ + *cloud_right_;
-        hands_ = localization_->localizeSuctionGrasps(cloud, cloud_left_->size(), indices, false, false);// last bool here is the planar removal
+        PointCloud::Ptr cloud(new PointCloud());// legacy
+        *cloud = *cloud_left_ + *cloud_right_;// legacy
+        PointCloudRGB::Ptr cloud_RGB(new PointCloudRGB());
+        *cloud_RGB = *cloud_left_rgb_ + *cloud_right_rgb_;
+        hands_ = localization_->localizeSuctionGrasps(cloud_RGB, cloud_left_->size(), indices, false, false);// last bool here is the planar removal
       }
       else
       {
-        hands_ = localization_->localizeSuctionGrasps(cloud_left_, cloud_left_->size(), indices, false, false);
+        hands_ = localization_->localizeSuctionGrasps(cloud_left_rgb_, cloud_left_->size(), indices, false, false);
 			}
 // to be changed
 //      antipodal_hands_ = localization_->predictAntipodalHands(hands_, svm_file_name_);

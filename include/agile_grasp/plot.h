@@ -44,6 +44,7 @@
 
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudRGB;
 typedef pcl::PointCloud<pcl::PointNormal> PointCloudNormal;
 
 /** Plot class
@@ -86,11 +87,25 @@ class Plot
 		void plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr& cloud,std::string Title = "samplePlot");
 		
 		/**
+		 * \brief Plot a set of samples.
+		 * \param index_list the list of samples (indices into the point cloud)
+		 * \param cloud the point cloud to be plotted
+		*/
+		void plotSamples(const std::vector<int>& index_list, const PointCloudRGB::Ptr& cloud,std::string Title = "samplePlot");
+
+		/**
 		 * \brief plots a point cloud
 		 * \param cloud the point cloud to be plotted
 		 */
 
 		void plotCloud(const PointCloud::Ptr& cloud, std::string = "samplePlot");
+
+		/**
+		 * \brief plots a point cloud
+		 * \param cloud the point cloud to be plotted
+		 */
+
+		void plotCloud(const PointCloudRGB::Ptr& cloud, std::string = "samplePlot");
 
 		/** 
 		 * \brief Plot a set of quadrics by plotting their local axes.
@@ -109,6 +124,13 @@ class Plot
 		void plotCameraSource(const Eigen::VectorXi& pts_cam_source_in, const PointCloud::Ptr& cloud);
 		
 		/** 
+		 * \brief Plot the camera source for each point in the point cloud.
+		 * \param pts_cam_source_in the camera source for each point in the point cloud
+		 * \param cloud the point cloud to be plotted
+		*/
+		void plotCameraSource(const Eigen::VectorXi& pts_cam_source_in, const PointCloudRGB::Ptr& cloud);
+
+		/**
 		 * \brief Create publishers for handles and grasp hypotheses to visualize them in Rviz.
 		 * \param node the ROS node for which the publishers are advertised
 		 * \param marker_lifetime the lifetime of each visual marker
