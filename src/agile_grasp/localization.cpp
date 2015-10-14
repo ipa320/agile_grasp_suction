@@ -124,14 +124,16 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 		//			 int viewPortID_1(0);
 		//			 viewer_comb_->createViewPort (0.0, 0.5, 0.5, 1.0, viewer_point_indicies_[0]);
 //					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> RawCloudColor (cloud, 150, 150, 150);
-					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cloud_in,"RawCloud",viewer_point_indicies_[0]);// cloud_
+					 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_RawCloud(cloud_in);
+					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cloud_in, rgb_RawCloud, "RawCloud",viewer_point_indicies_[0]);// cloud_
 					 viewer_comb_->addText ("Raw input point cloud", 10, 10, "v1 text", viewer_point_indicies_[0]);
 
 					 // part 2(Post processing)
 		//			 int viewPortID_2(0);
 		//			 viewer_comb_->createViewPort (0.5, 0.5, 1.0, 1.0, viewer_point_indicies_[1]);
 //					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> PreprocessedCloudColor (cloud, 150, 150, 150);
-					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cloud,"PreprocessedCloud",viewer_point_indicies_[1]);
+					 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_PreprocessedCloud(cloud);
+					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cloud,rgb_PreprocessedCloud,"PreprocessedCloud",viewer_point_indicies_[1]);
 					 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (cloud, cloud_normals, 25, 0.025, "normals_v2",viewer_point_indicies_[1]);// added to note the normals
 					 viewer_comb_->addText ("Post pre-processing", 10, 10, "v2 text", viewer_point_indicies_[1]);
 
@@ -139,8 +141,8 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 		//			 int viewPortID_3(0);
 		//			 viewer_comb_->createViewPort (0.0, 0.0, 0.5, 0.5, viewer_point_indicies_[2]);
 					 viewer_comb_->addText ("Segmentation", 10, 10, "v3 text", viewer_point_indicies_[2]);
-//					 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> SegmentationColor(segmented_colored_pc);
-					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (segmented_colored_pc, "segmented_cloud",viewer_point_indicies_[2]);
+					 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_segmented_cloud(segmented_colored_pc);
+					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (segmented_colored_pc, rgb_segmented_cloud,"segmented_cloud",viewer_point_indicies_[2]);
 //					 viewer_comb_->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (segmented_colored_pc, cloud_normals, 25, 0.05, "normals_v2",viewer_point_indicies_[2]); // removed for clarity
 					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cluster_cloud_circle,"CircleCloud_v1",viewer_point_indicies_[2]);
 
@@ -149,7 +151,8 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 		//			 viewer_comb_->createViewPort (0.5, 0.0, 1.0, 0.5, viewer_point_indicies_[3]);
 					 viewer_comb_->addText ("GraspDetection", 10, 10, "v4 text", viewer_point_indicies_[3]);
 //					 pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> GraspsColor (cloud, 0, 150, 200);
-					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cluster_cloud_complete, "grasps_cloud",viewer_point_indicies_[3]);
+					 pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_grasps_cloud(cluster_cloud_complete);
+					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cluster_cloud_complete, rgb_grasps_cloud, "grasps_cloud",viewer_point_indicies_[3]);
 					 viewer_comb_->addPointCloud<pcl::PointXYZRGB> (cluster_cloud_circle,"CircleCloud_v2",viewer_point_indicies_[3]);
 		//			 addCylindersToPlot(viewer_comb_,circle_inliners_of_all_clusters,circle_coefficients_of_all_clusters);
 					 first_plot_ = false;
@@ -795,7 +798,7 @@ PointCloudRGB::Ptr Localization::PointCloudPreProcessing(const PointCloudRGB::Pt
 	filterWorkspace(cloud_in, pts_cam_source, cloud, pts_cam_source);
 	std::cout << "cloud size after filtering:" << cloud->size()
 			<< " points left\n";
-	ROS_WARN("Saving_clouds");
+
 	// store complete cloud for later plotting
 	*cloud_plot = *cloud;
 	*cloud_rgb_ = *cloud;
@@ -807,6 +810,13 @@ PointCloudRGB::Ptr Localization::PointCloudPreProcessing(const PointCloudRGB::Pt
 	double t2_voxels = omp_get_wtime() - t1_voxels;
 	std::cout << " Created " << cloud->points.size() << " voxels in "
 			<< t2_voxels << " sec\n";
+
+	// removal of outliers
+	pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+	sor.setInputCloud (cloud);
+	sor.setMeanK (50);
+	sor.setStddevMulThresh (1.0);
+	sor.filter (*cloud);
 
 	// plot camera source for each point in the cloud
 	if (plots_camera_sources_)
@@ -1184,16 +1194,16 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 		pcl::PointIndices::Ptr aPtr(new pcl::PointIndices(clusters[i]));
 
 		// this part was used to project the clusters on to a plane then find a bounding contour wich was then used to find the area of the cluster
-//		// extractiion of the cluster
-//		pcl::ExtractIndices<pcl::PointXYZ> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
-//		PointCloud::Ptr cluster_cloud(new PointCloud);// contains the cloud where all detected circles are projected
+		// extractiion of the cluster
+//		pcl::ExtractIndices<pcl::PointXYZRGB> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
+//		PointCloudRGB::Ptr cluster_cloud(new PointCloudRGB);// contains the cloud where all detected circles are projected
 ////		// extract the points corresponding to the indices
 //		extract_sub_cloud.setInputCloud(cloud);
 //		extract_sub_cloud.setIndices(aPtr);
 //		extract_sub_cloud.setNegative(false);
 //		extract_sub_cloud.filter(*cluster_cloud); // cluster cloud contains the subcloud
-//
-////		plot_.plotCloud(cluster_cloud, "The cluster raw");
+
+//		plot_.plotCloud(cluster_cloud, "The cluster raw");
 //
 //		// getting the centeroid of the PC_cluster and computing the eigen vectors corresonding to the majour axies
 //		Eigen::Vector4f Cluster_Centroid;
@@ -1344,40 +1354,42 @@ void Localization::CalculateNormalsForPointCloud(PointCloudRGB::Ptr& cloud_in,
 {
 	double t_start = omp_get_wtime();
 // This is an alternative method for obtaining the normals of the point cloud by first fitting a polynomail to the point cloud
-//	pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
-//	mls.setComputeNormals (true);
-//	mls.setInputCloud (cloud_in);
-//	mls.setPolynomialFit (true);
-//	mls.setSearchMethod (tree);
-//	mls.setSearchRadius (normal_radius_search*2);
-//	pcl::PointCloud<pcl::PointNormal> cloud_normals2;
-//	pcl::PointCloud<pcl::PointNormal>::Ptr xxxxPN(new pcl::PointCloud<pcl::PointNormal> ());
-//	pcl::PointCloud<pcl::PointXYZ>::Ptr xxxxP(new pcl::PointCloud<pcl::PointXYZ> ());
-//	pcl::PointCloud<pcl::Normal>::Ptr xxxxN(new pcl::PointCloud<pcl::Normal> ());
-//	mls.process(*xxxxPN);
-//	xxxxN->resize(xxxxPN->points.size());
-//	xxxxP->resize(xxxxPN->points.size());
-//    for (int i = 0; i < xxxxPN->points.size(); i ++){
-//    	xxxxN->points[i].normal_x = xxxxPN->points[i].normal_x;
-//    	xxxxN->points[i].normal_y = xxxxPN->points[i].normal_y;
-//    	xxxxN->points[i].normal_z = xxxxPN->points[i].normal_z;
-//    	xxxxN->points[i].curvature = xxxxPN->points[i].curvature;
-////    	xxxxN->points[i].data_n = xxxxPN->points[i].data_n;
-//
-//    	xxxxP->points[i].x = xxxxPN->points[i].x;
-//    	xxxxP->points[i].y = xxxxPN->points[i].y;
-//    	xxxxP->points[i].z = xxxxPN->points[i].z;
-////    	xxxxP->points[i].data = xxxxPN->points[i].data;
-//    }
-//	plot_.plotCloud(xxxxP, "The smoothed cloud");
-//    cloud_normals = xxxxN;
-//    cloud_in = xxxxP;
+	pcl::MovingLeastSquares<pcl::PointXYZRGB, pcl::PointXYZRGBNormal> mls;
+	mls.setComputeNormals (true);
+	mls.setInputCloud (cloud_in);
+	mls.setPolynomialFit (true);
+	mls.setSearchMethod (tree);
+	mls.setSearchRadius (normal_radius_search*2);
+	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr xxxxPN(new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr xxxxP(new pcl::PointCloud<pcl::PointXYZRGB> ());
+	pcl::PointCloud<pcl::Normal>::Ptr xxxxN(new pcl::PointCloud<pcl::Normal> ());
+	mls.process(*xxxxPN);
+	xxxxN->resize(xxxxPN->points.size());
+	xxxxP->resize(xxxxPN->points.size());
+    for (int i = 0; i < xxxxPN->points.size(); i ++){
+    	xxxxN->points[i].normal_x = xxxxPN->points[i].normal_x;
+    	xxxxN->points[i].normal_y = xxxxPN->points[i].normal_y;
+    	xxxxN->points[i].normal_z = xxxxPN->points[i].normal_z;
+    	xxxxN->points[i].curvature = xxxxPN->points[i].curvature;
+//    	xxxxN->points[i].data_n = xxxxPN->points[i].data_n;
 
-	pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> normal_estimator;// create normal estimator
-	normal_estimator.setInputCloud (cloud_in);
-	normal_estimator.setSearchMethod (tree);
-	normal_estimator.setRadiusSearch (normal_radius_search);
-	normal_estimator.compute (*cloud_normals);
+    	xxxxP->points[i].x = xxxxPN->points[i].x;
+    	xxxxP->points[i].y = xxxxPN->points[i].y;
+    	xxxxP->points[i].z = xxxxPN->points[i].z;
+    	xxxxP->points[i].r = xxxxPN->points[i].r;
+    	xxxxP->points[i].g = xxxxPN->points[i].g;
+    	xxxxP->points[i].b = xxxxPN->points[i].b;
+//    	xxxxP->points[i].data = xxxxPN->points[i].data;
+    }
+//	plot_.plotCloud(xxxxP, "The smoothed cloud");
+    cloud_normals = xxxxN;
+    cloud_in = xxxxP;
+
+//	pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> normal_estimator;// create normal estimator
+//	normal_estimator.setInputCloud (cloud_in);
+//	normal_estimator.setSearchMethod (tree);
+//	normal_estimator.setRadiusSearch (normal_radius_search);
+//	normal_estimator.compute (*cloud_normals);
 
 	double t_end = omp_get_wtime();
 	std::cout << "Normal calculation done in " <<  t_end -t_start << " sec\n";
@@ -1638,7 +1650,7 @@ void Localization::voxelizeCloud(const PointCloud::Ptr& cloud_in, const Eigen::V
 void Localization::voxelizeCloud(const PointCloudRGB::Ptr& cloud_in, const Eigen::VectorXi& pts_cam_source_in,
 	PointCloudRGB::Ptr& cloud_out, Eigen::VectorXi& pts_cam_source_out, double cell_size)
 {
-	ROS_WARN("Voxelization");
+//	ROS_WARN("Voxelization");
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr voxelized_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 		pcl::VoxelGrid<pcl::PointXYZRGB> voxelizer;
 		voxelizer.setInputCloud (cloud_in);

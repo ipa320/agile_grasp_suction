@@ -15,10 +15,10 @@
     
 <!-- // parameters for segmentation (Region Growing)-->
 	<param name="normal_radius_search" value="0.01" />   <!-- area for which normals are calculated -->
-	<param name="num_of_kdTree_neighbours" value="70" /> <!-- number of neighbours which are taken around each neighnourhod seed point -->
-	<param name="angle_threshold_between_normals" value="4.0" /> <!-- in degrees -->
-	<param name="curvature_threshold" value="0.07" />
-	<param name="minimum_size_of_cluster_allowed" value="20" /> <!-- minimum number of points for a region to be considerd a cluster -->
+	<param name="num_of_kdTree_neighbours" value="40" /> <!-- number of neighbours which are taken around each neighnourhod seed point 70 for neighnourhood normal-->
+	<param name="angle_threshold_between_normals" value="2.3" /> <!-- in degrees --><!-- 3.3 for polynomial normal calc 4.0 for neighbourhood normal calc-->
+	<param name="curvature_threshold" value="0.025" /> <!-- 0.025 for polynomial normal calc 0.07 for neighbourhood normal calc-->
+	<param name="minimum_size_of_cluster_allowed" value="70" /> <!-- minimum number of points for a region to be considerd a cluster -->
 	
 <!-- // parameters for segmentation (circle detection)-->			
 	<param name="min_detected_radius" value="0.020" /> <!-- in meters -->

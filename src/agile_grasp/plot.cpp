@@ -46,13 +46,15 @@ void Plot::plotSamples(const std::vector<int>& index_list, const PointCloudRGB::
 		samples_cloud->points.push_back(cloud->points[index_list[i]]);
 
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer(Title);
-	viewer->addPointCloud<pcl::PointXYZRGB>(cloud, "registered point cloud");
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
-		"registered point cloud");
-	viewer->addPointCloud<pcl::PointXYZRGB>(samples_cloud, "samples cloud");
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "samples cloud");
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0,
-		"samples cloud");
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_c(cloud);
+	viewer->addPointCloud<pcl::PointXYZRGB>(cloud, rgb_c,"registered point cloud");
+//	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+//		"registered point cloud");
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_sc(samples_cloud);
+	viewer->addPointCloud<pcl::PointXYZRGB>(samples_cloud, rgb_sc,"samples cloud");
+//	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "samples cloud");
+//	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0,
+//		"samples cloud");
 	viewer->addCoordinateSystem(0.3);
 	runViewer(viewer);
 }

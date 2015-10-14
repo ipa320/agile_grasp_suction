@@ -97,6 +97,7 @@ typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudRGB;
 #include <pcl/io/obj_io.h>
 #include <pcl/TextureMesh.h>
 #include <pcl/surface/texture_mapping.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 
 
 /** Localization class

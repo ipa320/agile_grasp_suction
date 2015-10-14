@@ -72,7 +72,7 @@ void message_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
 		* part used for processing
 		*/
 		crop_PC (cloud_recieved_);
-//		voxelize_PC (cloud_recieved_, cell_size_);
+		voxelize_PC (cloud_recieved_, cell_size_);
 			// do the voxelization
 	}
 	}
