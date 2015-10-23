@@ -97,8 +97,15 @@ typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudRGB;
 #include <pcl/io/obj_io.h>
 #include <pcl/TextureMesh.h>
 #include <pcl/surface/texture_mapping.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-
+#include <pcl/filters/statistical_outlier_removal.h> // used for outlier removal
+#include <pcl/sample_consensus/sac_model_plane.h> // used when looking for plane inliers in a PC
+#include <pcl/segmentation/extract_polygonal_prism_data.h> // used to remove extrussions of planes
+#include <pcl/io/png_io.h>
+// OpenCV includes
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include <stdlib.h>
+#include <stdio.h>
 
 /** Localization class
  *

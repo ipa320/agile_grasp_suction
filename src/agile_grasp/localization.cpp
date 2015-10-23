@@ -12,6 +12,7 @@ std::vector<GraspHypothesis> Localization::localizeSuctionGrasps(const PointClou
 	double t0 = omp_get_wtime();
 	PointCloudRGB::Ptr cloud_plot(new PointCloudRGB);
 	PointCloudRGB::Ptr cloud;
+	*cloud_rgb_ = *cloud_in;
 	cloud = PointCloudPreProcessing(cloud_in,cloud_plot,size_left,uses_clustering);
 			// variable decelerations
 			pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ()); // create KD tree
@@ -801,7 +802,7 @@ PointCloudRGB::Ptr Localization::PointCloudPreProcessing(const PointCloudRGB::Pt
 
 	// store complete cloud for later plotting
 	*cloud_plot = *cloud;
-	*cloud_rgb_ = *cloud;
+//	*cloud_rgb_ = *cloud; // removed from here and moved to top of suctionGrasp
 
 	// voxelize point cloud
 	std::cout << "Voxelizing point cloud\n";
@@ -1193,17 +1194,191 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 	for (int i = 0; i < clusters.size(); i++) {
 		pcl::PointIndices::Ptr aPtr(new pcl::PointIndices(clusters[i]));
 
+// --> this part was added as a test to extract the RGB info of each cluster for later processing
 		// this part was used to project the clusters on to a plane then find a bounding contour wich was then used to find the area of the cluster
 		// extractiion of the cluster
-//		pcl::ExtractIndices<pcl::PointXYZRGB> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
-//		PointCloudRGB::Ptr cluster_cloud(new PointCloudRGB);// contains the cloud where all detected circles are projected
-////		// extract the points corresponding to the indices
-//		extract_sub_cloud.setInputCloud(cloud);
-//		extract_sub_cloud.setIndices(aPtr);
-//		extract_sub_cloud.setNegative(false);
-//		extract_sub_cloud.filter(*cluster_cloud); // cluster cloud contains the subcloud
+		pcl::ExtractIndices<pcl::PointXYZRGB> extract_sub_cloud; // used to extract the sub cloud (cluster) from the Pointcloud
+		PointCloudRGB::Ptr cluster_cloud(new PointCloudRGB);// contains the cloud where all detected circles are projected
+//		// extract the points corresponding to the indices
+		extract_sub_cloud.setInputCloud(cloud);
+		extract_sub_cloud.setIndices(aPtr);
+		extract_sub_cloud.setNegative(false);
+		extract_sub_cloud.filter(*cluster_cloud); // cluster cloud contains the subcloud
 
 //		plot_.plotCloud(cluster_cloud, "The cluster raw");
+
+		// find the plane containing the cluster
+		pcl::SACSegmentation<pcl::PointXYZRGB> seg;
+		pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+		pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
+		seg.setOptimizeCoefficients(true);
+		seg.setModelType(pcl::SACMODEL_PLANE);
+		seg.setMethodType(pcl::SAC_RANSAC);
+		seg.setMaxIterations(100);
+		seg.setDistanceThreshold(0.01);
+		// Segment the largest planar component from the remaining cloud
+		seg.setInputCloud(cluster_cloud);
+		seg.segment(*inliers, *coefficients);
+
+		// create the objects needed
+		pcl::ConvexHull<pcl::PointXYZRGB> hull_convex;
+		pcl::ProjectInliers<pcl::PointXYZRGB> proj; // projection obj to project the inliers to the plane
+		std::vector<pcl::Vertices> hull_vertices;
+		pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+		PointCloudRGB::Ptr hull_boundary(new PointCloudRGB);
+
+		// hull must be 2d thus project cluster to plane
+		proj.setInputCloud(cluster_cloud);
+		proj.setModelCoefficients(coefficients);
+//		proj.setIndices(inlineers_circle_current);
+		proj.filter(*cluster_cloud);
+
+//		plot_.plotCloud(cluster_cloud, "The cluster projected on detected plane");
+
+		// extract cluster
+		hull_convex.setInputCloud(cluster_cloud);
+		hull_convex.setDimension(2);
+		hull_convex.reconstruct(*hull_boundary, hull_vertices);
+//		std::cout<<"*****************"<<"\n";
+//		std::cout<<hull_boundary->size()<<"\n";
+//		std::cout<<hull_vertices[0].vertices.size()<<"\n";
+//
+//		plot_.plotCloud(hull_boundary, "Boundry of the hull");
+//
+//		prism.setInputCloud(cluster_cloud);
+//		prism.setInputPlanarHull(hull_boundary);
+//		prism.setHeightLimits(-0.01,0.01);
+//		prism.segment(*inliers);
+//
+//		extract_sub_cloud.setInputCloud(cluster_cloud);
+//		extract_sub_cloud.setIndices(inliers);
+//	    extract_sub_cloud.setNegative(false);
+//		extract_sub_cloud.filter(*cluster_cloud);
+//
+//		plot_.plotCloud(cluster_cloud, "extraction using hull filtration");
+//
+//
+//
+//		pcl::KdTreeFLANN<pcl::PointXYZRGB> kdtree;
+//		kdtree.setInputCloud (cloud_rgb_);
+//		pcl::PointXYZRGB searchPoint;
+//		std::vector<int> pointIdxNKNSearch(1);
+//		std::vector<float> pointNKNSquaredDistance(1);
+//		pcl::PointIndices::Ptr hull_inliers_cloud_orig (new pcl::PointIndices);
+//
+//		if (hull_boundary->size()>0)
+//		{
+//			for (int i = 0; i < hull_boundary->size(); i++){
+//				searchPoint = hull_boundary->points[i];
+//				if ( kdtree.nearestKSearch (searchPoint, 1, pointIdxNKNSearch, pointNKNSquaredDistance) > 0 )
+//				{
+//					hull_inliers_cloud_orig->indices.push_back(pointIdxNKNSearch[0]);
+//				}
+//		}
+//		}
+//
+//		else std::cout << "The chosen hull is empty." << std::endl;
+//
+//		extract_sub_cloud.setInputCloud(cloud_rgb_);
+//		extract_sub_cloud.setIndices(hull_inliers_cloud_orig);
+//	    extract_sub_cloud.setNegative(false);
+//		extract_sub_cloud.filter(*hull_boundary);
+//
+//		plot_.plotCloud(hull_boundary, "extraction using hull filtration original cloud");
+//
+//		proj.setInputCloud(hull_boundary);
+//		proj.setModelCoefficients(coefficients);
+////		proj.setIndices(inlineers_circle_current);
+//		proj.filter(*hull_boundary);
+//
+//		plot_.plotCloud(hull_boundary, "extraction using hull filtration original cloud projected onto plane");
+
+		//extract cluster equivilant in Hi res cloud
+		prism.setInputCloud(cloud_rgb_);
+		prism.setInputPlanarHull(hull_boundary);
+		prism.setHeightLimits(-0.01,0.01);
+		prism.segment(*inliers);
+
+		std::cout<<"*****************"<<"\n";
+		std::cout<<cluster_cloud->size()<<"\n";
+
+		// extraction from cloud to visualize
+		extract_sub_cloud.setInputCloud(cloud_rgb_);
+		extract_sub_cloud.setIndices(inliers);
+	    extract_sub_cloud.setNegative(false);
+		extract_sub_cloud.filter(*cluster_cloud);
+		std::cout<<cluster_cloud->size()<<"\n";
+
+//		plot_.plotCloud(cluster_cloud, "Final result");
+		std::cout<<"the pointcloud to be saved is :"<< cloud_rgb_->isOrganized()<<" \n";
+//		pcl::io::savePNGFile("/home/fmw-sa/Pictures/POINT_CLOUD_SAVED", *cloud_rgb_,"rgb");
+
+		std::cout<<"******** SAVED *********"<<"\n";
+		cv::Mat src, src2, dst, temp;
+//		src = cv::imread("/home/fmw-sa/Pictures/pcis/POINT_CLOUD_SAVED.png");
+		double t_copy1 = omp_get_wtime();
+		if( !src.data )
+		    { printf(" No data! in input Image please advise \n");}
+
+		// extract the complete full resolution RGB image
+		if (cloud_rgb_->isOrganized()) {
+		    src = cv::Mat(cloud_rgb_->height, cloud_rgb_->width, CV_8UC3);
+
+		    if (!cloud_rgb_->empty()) {
+
+		        for (int h=0; h<src.rows; h++) {
+		            for (int w=0; w<src.cols; w++) {
+		                pcl::PointXYZRGB point = cloud_rgb_->at(w, h);
+
+		                Eigen::Vector3i rgb = point.getRGBVector3i();
+
+		                src.at<cv::Vec3b>(h,w)[0] = rgb[2];
+		                src.at<cv::Vec3b>(h,w)[1] = rgb[1];
+		                src.at<cv::Vec3b>(h,w)[2] = rgb[0];
+		            }
+		        }
+		    }
+		}
+
+		double t_copy2 = omp_get_wtime();
+		std::cout<<"image copying took "<<t_copy2 - t_copy1<<" sec\n"; // print the time needed to copy the PCD rgb date to the camera
+		cv::imwrite("/home/fmw-sa/Pictures/pcis/WRITTEN.jpg",src); // save the complete picture
+
+		src2 = cv::Mat(cloud_rgb_->height, cloud_rgb_->width, CV_8UC3, cv::Scalar(0,0,0)); // create a black image
+			// create full resolution cluster image
+            for (int w=0; w<inliers->indices.size(); w++) {
+                pcl::PointXYZRGB point = cloud_rgb_->at(inliers->indices[w]);
+
+                Eigen::Vector3i rgb = point.getRGBVector3i();
+
+                src2.at<cv::Vec3b>(inliers->indices[w])[0] = rgb[2];
+                src2.at<cv::Vec3b>(inliers->indices[w])[1] = rgb[1];
+                src2.at<cv::Vec3b>(inliers->indices[w])[2] = rgb[0];
+            }
+
+        std::stringstream sstm;
+        std::string ouputdirectory = "/home/fmw-sa/Pictures/pcis/WRITTEN_cropped_";
+        sstm << ouputdirectory << i;
+        sstm << ".jpg";
+        std::string result = sstm.str();
+        cv::imwrite(result ,src2);
+
+//		std::cout<<src<<"\n";
+//		cv::imshow( "PC_RGB", src );
+//
+//		pcl::SampleConsensusModelPlane<pcl::PointXYZRGB> plane_filter(cloud_rgb_);
+//		Eigen::Vector4f coefficients2 = Eigen::Vector4f(coefficients->values[0],coefficients->values[1],coefficients->values[2],coefficients->values[3]);
+//		plane_filter.selectWithinDistance(coefficients2 ,0.003,inliers->indices);
+//
+//		extract_sub_cloud.setInputCloud(cloud_rgb_);
+//		extract_sub_cloud.setIndices(inliers);
+//		extract_sub_cloud.setNegative(false);
+//		extract_sub_cloud.filter(*cluster_cloud);
+//
+//		plot_.plotCloud(cluster_cloud, "The full cloud with plane inliers");
+
+// -->  End this part was added as a test to extract the RGB info of each cluster for later processing
 //
 //		// getting the centeroid of the PC_cluster and computing the eigen vectors corresonding to the majour axies
 //		Eigen::Vector4f Cluster_Centroid;
