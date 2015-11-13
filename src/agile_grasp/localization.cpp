@@ -1204,9 +1204,9 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 		extract_sub_cloud.setIndices(aPtr);
 		extract_sub_cloud.setNegative(false);
 		extract_sub_cloud.filter(*cluster_cloud); // cluster cloud contains the subcloud
-
-//		plot_.plotCloud(cluster_cloud, "The cluster raw");
-
+#ifdef NDEBUG_PLOT
+		plot_.plotCloud(cluster_cloud, "The cluster raw");
+#endif
 		// find the plane containing the cluster
 		pcl::SACSegmentation<pcl::PointXYZRGB> seg;
 		pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
@@ -1233,9 +1233,9 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 		proj.setModelCoefficients(coefficients);
 //		proj.setIndices(inlineers_circle_current);
 		proj.filter(*cluster_cloud);
-
-//		plot_.plotCloud(cluster_cloud, "The cluster projected on detected plane");
-
+#ifdef NDEBUG_PLOT
+		plot_.plotCloud(cluster_cloud, "The cluster projected on detected plane");
+#endif
 		// extract cluster
 		hull_convex.setInputCloud(cluster_cloud);
 		hull_convex.setDimension(2);
@@ -1243,9 +1243,9 @@ void Localization::CircleExtraction(std::vector<pcl::PointIndices>& clusters,
 //		std::cout<<"*****************"<<"\n";
 //		std::cout<<hull_boundary->size()<<"\n";
 //		std::cout<<hull_vertices[0].vertices.size()<<"\n";
-//
-//		plot_.plotCloud(hull_boundary, "Boundry of the hull");
-//
+#ifdef NDEBUG_PLOT
+		plot_.plotCloud(hull_boundary, "Boundry of the hull");
+#endif
 //		prism.setInputCloud(cluster_cloud);
 //		prism.setInputPlanarHull(hull_boundary);
 //		prism.setHeightLimits(-0.01,0.01);
